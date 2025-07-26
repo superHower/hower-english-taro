@@ -690,8 +690,8 @@ const handleSubmit = () => {
           >
             <View className='result-container'>
               <View className='result-header'>
-                <Text className='result-title'>默写结果</Text>
-                <Text className='result-score'>得分: {score}/{tableData.length}</Text>
+                <Text className='result-title'>Score: </Text>
+                <Text className='result-score'>{((score / tableData.length) * 100).toFixed(2)}</Text>
               </View>
               
               <View className='result-cards'>
@@ -699,13 +699,13 @@ const handleSubmit = () => {
                   <View className={`result-card ${item.res ? 'correct' : 'incorrect'}`} key={item.id}>
                     <View className='result-card-header'>
                       <Text className='result-index'>{index + 1}</Text>
-                      <Text className='result-cn-correct'>{item.cn}</Text>
+                      <Text className='result-en'>{item.cn}</Text>
                       <Text className={`result-status ${item.res ? 'correct' : 'incorrect'}`}>{item.res ? '✓' : '✗'}</Text>
                     </View>
-                    <View className='result-card-content'>
-                      <Text className='result-en'>{item.en}</Text>
-                      <Text className='result-cn-input'>{item.input || '(未填写)'}</Text>
-                    </View>
+                    
+                    <Text className='result-correct'>{item.en}</Text>
+                    {!item.res && <Text className='result-input'>{item.input || '(blank)'}</Text>}
+                    
                   </View>
                 ))}
               </View>

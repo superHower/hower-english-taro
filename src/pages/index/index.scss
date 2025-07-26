@@ -477,12 +477,13 @@
           .result-title {
             font-size: 24px;
             font-weight: bold;
-            color: #333;
+            color: #ffffff;
             margin-bottom: 8px;
+            margin-right: 16px;
           }
           
           .result-score {
-            font-size: 18px;
+            font-size: 28px;
             color: #1890ff;
           }
         }
@@ -493,6 +494,8 @@
           gap: 16px;
           
           .result-card {
+            display: flex;
+            flex-direction: column;
             background: rgba(255, 255, 255, 0.05);
             border-radius: 12px;
             padding: 16px;
@@ -510,6 +513,7 @@
               display: flex;
               justify-content: space-between;
               margin-bottom: 12px;
+              flex-direction: row;
               
               .result-index {
                 font-weight: bold;
@@ -517,7 +521,7 @@
               }
               
               .result-status {
-                font-size: 20px;
+                font-size: 24px;
                 font-weight: bold;
                 
                 &.correct {
@@ -529,23 +533,24 @@
                 }
               }
             }
-            
-            .result-card-content {
+          
               .result-en {
-                font-size: 18px;
+                font-size: 28px;
                 font-weight: bold;
                 margin-bottom: 8px;
               }
               
-              .result-cn-correct {
+              .result-correct {
                 color: #52c41a;
                 margin-bottom: 8px;
+                font-size: 28px;
               }
               
-              .result-cn-input {
+              .result-input {
                 color: #f56c6c;
+                font-size: 24px;
               }
-            }
+            
           }
         }
       }
