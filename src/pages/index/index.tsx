@@ -1,9 +1,10 @@
-import { View, Text, Button, Input, ScrollView, Image, Picker } from '@tarojs/components'
+import { View, Text, Button, Input, ScrollView, Image, Progress } from '@tarojs/components'
 import { useLoad } from '@tarojs/taro'
 import { useState, useEffect, useRef } from 'react'
 import './index.scss'
 import db from './word'
 import Taro from '@tarojs/taro'
+import switchPng from '../../assets/icons/switch.png'
 
 interface Word {
   id: number;
@@ -45,17 +46,16 @@ export default function Index() {
   const [acnt, setAcnt] = useState("")
   const [score, setScore] = useState(0)
   const [remainingTime, setRemainingTime] = useState(0)
-  const [showAnswers, setShowAnswers] = useState(false)
   const [windowWidth, setWindowWidth] = useState(0)
   const [showConfigPanel, setShowConfigPanel] = useState(false)
-  const [color, setColor] = useState('#ffffff')
+  const [progressColor, setProgressColor] = useState('#ffffff')
+  const [moDisable, setMoDisable] = useState(true) // 是否禁止默写
+  const [hiddenMode, setHiddenMode] = useState<'no' | 'en' | 'cn'>('no')
   
   // 新增状态
-  const [studyMode, setStudyMode] = useState<'none' | 'study' | 'dictation'>('none') // 学习模式
+  const [studyMode, setStudyMode] = useState<'study' | 'dictation' | 'done' | 'none'>('none') // 学习模式
   const [currentWordIndex, setCurrentWordIndex] = useState(0) // 当前默写单词索引
-  const [showDictationModal, setShowDictationModal] = useState(false) // 是否显示默写弹窗
   const [currentInput, setCurrentInput] = useState('') // 当前输入的内容
-  const [isCompleted, setIsCompleted] = useState(false) // 是否全部完成
   
   // 计时器引用
   const countdownIntervalRef = useRef<any>(null)
@@ -69,7 +69,31 @@ export default function Index() {
         setWindowWidth(res.windowWidth - 24)
       }
     })
+    try {
+      const storedData = Taro.getStorageSync('word')
+      if (storedData) {
+        setDatabase(JSON.parse(storedData))
+      } else {
+        Taro.setStorageSync('word', JSON.stringify(db))
+        setDatabase(db)
+      }
+    } catch (error) {
+      console.error('Storage error:', error)
+      // 出错时使用默认数据
+      setDatabase(db)
+    }
+    // 小程序环境不需要监听窗口大小变化
     
+    // 组件卸载时清理
+    return () => {
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current)
+      }
+    }
+  })
+
+  // 选择书本
+  const handleBook = (value) => {
     // 从本地存储加载数据
     try {
       const storedData = Taro.getStorageSync('word')
@@ -85,28 +109,6 @@ export default function Index() {
       setDatabase(db)
     }
 
-    // 小程序环境不需要监听窗口大小变化
-    
-    // 组件卸载时清理
-    return () => {
-      if (countdownIntervalRef.current) {
-        clearInterval(countdownIntervalRef.current)
-      }
-    }
-  })
-
-  // 窗口大小变化处理 - 小程序环境使用
-  const handleResize = () => {
-    Taro.getSystemInfo({
-      success: (res) => {
-        setWindowWidth(res.windowWidth - 24)
-      }
-    })
-  }
-
-  // 选择书本
-  const handleBook = (value) => {
-    console.log(value)
     const newSearch = { ...search, book: value }
     setSearch(newSearch)
     
@@ -144,6 +146,8 @@ export default function Index() {
     setDcnt(`短语: ${dc}/${de}/${dt}`)
     setVcnt(`动词: ${vc}/${ve}/${vt}`)
     setOcnt(`其他: ${oc}/${oe}/${ot}`)
+    setMoDisable(true)
+    setStudyMode('none')
   }
 
   // 设置预设配置
@@ -164,84 +168,76 @@ export default function Index() {
   }
 
   // 处理提交
-  const handleSubmit = () => {
-    if (studyMode === 'dictation') {
-      // 默写模式的提交逻辑
-      const newTableData = [...tableData]
-      let newScore = 0
-      
-      newTableData.forEach((item, index) => {
-        const userInput = item.input?.trim().toLowerCase() || ""
-        const correct = item.en.trim().toLowerCase() // 默写模式比较英文
-        
-        if (userInput === correct) {
-          newTableData[index] = { ...item, res: true }
-          newScore++
-          
-          // 更新数据库中的数据
-          const newDatabase = [...database]
-          const dbItemIndex = newDatabase.findIndex(dbItem => dbItem.id === item.id)
-          
-          if (dbItemIndex !== -1) {
-            newDatabase[dbItemIndex] = {
-              ...newDatabase[dbItemIndex],
-              cnt: newDatabase[dbItemIndex].cnt + 1,
-              time: Date.now()
-            }
-          }
-          
-          setDatabase(newDatabase)
-        } else {
-          newTableData[index] = { ...item, res: false }
-          
-          // 更新数据库中的数据
-          const newDatabase = [...database]
-          const dbItemIndex = newDatabase.findIndex(dbItem => dbItem.id === item.id)
-          
-          if (dbItemIndex !== -1) {
-            newDatabase[dbItemIndex] = {
-              ...newDatabase[dbItemIndex],
-              cnt: newDatabase[dbItemIndex].cnt + 1,
-              error: newDatabase[dbItemIndex].error + 1,
-              time: Date.now()
-            }
-          }
-          
-          setDatabase(newDatabase)
-        }
-      })
-      
-      setTableData(newTableData)
-      setScore(newScore)
-      
-      // 保存到本地存储
-      try {
-        Taro.setStorageSync('word', JSON.stringify(database))
-      } catch (error) {
-        console.error('Storage save error:', error)
-      }
-      
-      // 显示答案
-      setShowAnswers(true)
-      setShowDictationModal(false)
-      setStudyMode('none')
-      
-      // 清除计时器
-      if (countdownIntervalRef.current) {
-        clearInterval(countdownIntervalRef.current)
-        countdownIntervalRef.current = null
-      }
+const handleSubmit = () => {
+  // 创建 tableData 的副本
+  const newTableData = [...tableData];
+  
+  // 保存当前输入到当前单词
+  newTableData[currentWordIndex] = { 
+    ...newTableData[currentWordIndex], 
+    input: currentInput 
+  };
+  
+  let newScore = 0;
+  
+  // 创建数据库的副本 - 在循环外部定义
+  const newDatabase = [...database];
+  
+  // 处理所有单词
+  newTableData.forEach((item, index) => {
+    const userInput = item.input?.trim().toLowerCase() || "";
+    const correct = item.en.trim().toLowerCase();
+    const isCorrect = userInput === correct;
+    
+    newTableData[index] = { 
+      ...item, 
+      res: isCorrect 
+    };
+    
+    if (isCorrect) newScore++;
+    
+    // 在数据库副本中查找对应项
+    const dbItemIndex = newDatabase.findIndex(dbItem => dbItem.id === item.id);
+    
+    if (dbItemIndex !== -1) {
+      const dbItem = newDatabase[dbItemIndex];
+      newDatabase[dbItemIndex] = {
+        ...dbItem,
+        cnt: dbItem.cnt + 1,
+        error: isCorrect ? dbItem.error : dbItem.error + 1,
+        time: Date.now()
+      };
     }
+  });
+  
+  // 更新状态
+  setTableData(newTableData);
+  setScore(newScore);
+  setDatabase(newDatabase); // 使用更新后的数据库副本
+  
+  // 保存到本地存储 - 使用 newDatabase 而不是 database
+  try {
+    Taro.setStorageSync('word', JSON.stringify(newDatabase));
+  } catch (error) {
+    console.error('Storage save error:', error);
   }
+  
+  // 显示答案
+  setStudyMode('done');
+
+  // 清除计时器
+  if (countdownIntervalRef.current) {
+    clearInterval(countdownIntervalRef.current);
+    countdownIntervalRef.current = null;
+  }
+};
 
   // 搜索处理函数
   const searchHandle = (isStudyMode) => {
-    setShowAnswers(false)
     setTableData([])
     setScore(0)
     setCurrentWordIndex(0)
     setCurrentInput('')
-    setIsCompleted(false)
 
     // 检查是否选择了单词类型
     if (search.type.length === 0) {
@@ -356,13 +352,27 @@ export default function Index() {
     
     if (isStudyMode) {
       setStudyMode('study')
+      setMoDisable(false)
     } else {
-      setStudyMode('dictation')
-      setShowDictationModal(true)
-      // 开始计时
+      if(tableData.length === 0) {
+        setMoDisable(true)
+        return
+      }
+      setStudyMode('dictation')      // 开始计时
       setTimeout(() => {
         startCountdown()
       }, 0)
+    }
+  }
+
+  // 隐藏函数
+  const hiddenHandle = () => {
+    if (hiddenMode === 'no') {
+      setHiddenMode('en')
+    } else if (hiddenMode === 'en') {
+      setHiddenMode('cn')
+    } else {
+      setHiddenMode('no')
     }
   }
 
@@ -399,24 +409,19 @@ export default function Index() {
   }
 
   // 处理默写下一个单词
-  const handleNextWord = (isLast: boolean) => {
-    if (isLast) {
-      handleSubmit()
-    }
+  const handleNextWord = () => {
     // 保存当前输入
-    const newTableData = [...tableData]
-    newTableData[currentWordIndex] = { 
-      ...newTableData[currentWordIndex], 
-      input: currentInput 
-    }
-    setTableData(newTableData)
-    
+    setTableData(prevData => {
+      const newData = [...prevData];
+      newData[currentWordIndex] = { ...newData[currentWordIndex], input: currentInput };
+      return newData;
+    });
+
     if (currentWordIndex < tableData.length - 1) {
       setCurrentWordIndex(currentWordIndex + 1)
       setCurrentInput('')
     } else {
-      // 最后一个单词，标记为完成
-      setIsCompleted(true)
+      handleSubmit()
     }
   }
 
@@ -438,11 +443,8 @@ export default function Index() {
 
   // 计算已完成的输入数量
   const completedCount = tableData.filter(item => item.input?.trim() !== '').length
-
   // 计算进度百分比
-  const progressPercentage = studyMode === 'dictation' 
-    ? Math.min(Math.round(((currentWordIndex + 1) / (tableData.length || 1)) * 100) || 0, 100)
-    : Math.min(Math.round((completedCount / (tableData.length || 1)) * 100) || 0, 100)
+  const progressPercentage =  Math.min(Math.round((completedCount / (tableData.length || 1)) * 100) || 0, 100)
 
   // 处理默写时间
   const handleTime = (t) => {
@@ -476,20 +478,9 @@ export default function Index() {
     }
     
     setSearch({ ...search, type: newTypes })
+    setMoDisable(true)
   }
 
-  // 关闭学习模式
-  const closeLearningMode = () => {
-    setStudyMode('none')
-    setShowDictationModal(false)
-    setCurrentWordIndex(0)
-    setCurrentInput('')
-    setIsCompleted(false)
-    if (countdownIntervalRef.current) {
-      clearInterval(countdownIntervalRef.current)
-      countdownIntervalRef.current = null
-    }
-  }
 
   const typeMap = {
     v: '动词',
@@ -517,12 +508,7 @@ export default function Index() {
           ))}
          {/* 学习配置 */}
           <View className='config-button-container'>
-            <Button 
-              className='config-button' 
-              onClick={() => setShowConfigPanel(!showConfigPanel)}
-            >
-              学习配置
-            </Button>
+            <Button className='config-button' onClick={() => setShowConfigPanel(!showConfigPanel)}>学习配置</Button>
             
             {showConfigPanel && (
               <View className='config-panel'>
@@ -583,25 +569,26 @@ export default function Index() {
         
         <View className='top-down'>
           <Button 
-            className='study-button' 
+            className={`study-button ${!search.book || search.type.length === 0 ? 'disabled' : ''}`} 
             onClick={() => searchHandle(true)} 
             disabled={!search.book || search.type.length === 0}
           >
             背诵
           </Button>
+
+          {search.book && search.type.length > 0 &&
+            <Image className='switch-icon' src={switchPng} onClick={() => hiddenHandle()} />
+          }
+     
+
           <Button 
-            className='dictation-button' 
+            className={`dictation-button ${!search.book || search.type.length === 0 || moDisable ? 'disabled' : ''}`} 
             onClick={() => searchHandle(false)} 
-            disabled={!search.book || search.type.length === 0}
+            disabled={!search.book || search.type.length === 0 || moDisable}
           >
             默写
           </Button>
-          {studyMode === 'dictation' && isCompleted && (
-            <Button className='submit-button' onClick={handleSubmit}>提交</Button>
-          )}
-          {studyMode !== 'none' && (
-            <Button className='submit-button' onClick={closeLearningMode}>关闭</Button>
-          )}
+
         </View>
    
       </View>
@@ -618,15 +605,18 @@ export default function Index() {
               {tableData.map((item, index) => (
                 <View className='word-card' key={item.id}>
                   <View className='card-header'>
-                    <Text className='card-en'>{item.en}</Text>
+                    <View className='card-lable'>
+                      {hiddenMode !== 'en' && <Text className='card-en'>{item.en}</Text>}
+                      <Text className='card-type'>{typeMap[item.type]}</Text>
+                    </View>
+                   
                     <View className='card-lable'>
                       <Text className='card-unit'>Unit {item.unit}</Text>
-                      <Text className='card-type'>{typeMap[item.type]}</Text>
                       <Text className='card-index'>{index + 1}</Text>
                     </View>
                   </View>
                   <View className='card-content'>
-                    <Text className='card-cn'>{item.cn}</Text>
+                    {hiddenMode !== 'cn' && <Text className='card-cn'>{item.cn}</Text>}
                     <Text className='card-stats'>战绩: {item.error}/{item.cnt}</Text>
                     <Text className='card-time'>{handleTime(item.time)}</Text>
                    
@@ -639,7 +629,7 @@ export default function Index() {
         )}
 
         {/* 默写模式 - 弹出组件 */}
-        {showDictationModal && (
+        {studyMode == 'dictation' && (
           <View className='dictation-modal'>
             <View className='modal-overlay'></View>
             <View className='modal-content'>
@@ -667,38 +657,32 @@ export default function Index() {
                     <Button className='prev-button' onClick={handlePrevWord} disabled={currentWordIndex === 0}>
                       上一个
                     </Button>
-                    <Button className='next-button' onClick={() => handleNextWord(currentWordIndex === tableData.length - 1)}>
+                    <Button className='next-button' onClick={() => handleNextWord()}>
                       {currentWordIndex === tableData.length - 1 ? '完成' : '下一个'
                     }</Button>
                   </View>
 
                   <View className='progress-container'>
                     <View className='progress-bar'>
-                      <View 
-                        className='progress-inner' 
-                        style={{
-                          width: `${progressPercentage}%`,
-                          backgroundColor: color
-                        }}
+                      <Progress 
+                        percent={progressPercentage}
+                        showInfo
+                        borderRadius={5}
+                        strokeWidth={16}
+                        color={progressColor}
                       >
-                        <Text className='progress-text'>{progressPercentage}%</Text>
-                      </View>
+                      </Progress>
                     </View>
                   </View>
                 </View>
               )}
 
-              {isCompleted && (
-                <View className='completion-message'>
-                  <Text>所有单词默写完成！点击提交按钮查看结果。</Text>
-                </View>
-              )}
             </View>
           </View>
         )}
 
         {/* 结果展示 */}
-        {showAnswers && studyMode === 'none' && (
+        {studyMode === 'done' && (
           <ScrollView 
             className='result-view'
             scrollY
@@ -715,14 +699,12 @@ export default function Index() {
                   <View className={`result-card ${item.res ? 'correct' : 'incorrect'}`} key={item.id}>
                     <View className='result-card-header'>
                       <Text className='result-index'>{index + 1}</Text>
-                      <Text className={`result-status ${item.res ? 'correct' : 'incorrect'}`}>
-                        {item.res ? '✓' : '✗'}
-                      </Text>
+                      <Text className='result-cn-correct'>{item.cn}</Text>
+                      <Text className={`result-status ${item.res ? 'correct' : 'incorrect'}`}>{item.res ? '✓' : '✗'}</Text>
                     </View>
                     <View className='result-card-content'>
                       <Text className='result-en'>{item.en}</Text>
-                      <Text className='result-cn-correct'>{item.cn}</Text>
-                      <Text className='result-cn-input'>你的答案: {item.input || '(未填写)'}</Text>
+                      <Text className='result-cn-input'>{item.input || '(未填写)'}</Text>
                     </View>
                   </View>
                 ))}
@@ -732,7 +714,7 @@ export default function Index() {
         )}
 
         {/* 默认状态 */}
-        {studyMode === 'none' && !showAnswers && (
+        {studyMode === 'none' && (
           <View className='empty-state' style={{ height: 'calc(100% - 40px)', width: windowWidth + 'px' }}>
             <Text>请选择书本和单词类型，然后点击背诵或默写按钮开始学习</Text>
           </View>

@@ -83,7 +83,6 @@
     .type-container {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
       justify-content: space-between;
       width: 100%;
       .type-option {
@@ -110,7 +109,10 @@
       justify-content: space-between;
       width: 100%;
     
-    
+      .switch-icon {
+        width: 36px;
+        height: 36px;
+      }
       /* 学习按钮 */
     
       .study-button {
@@ -123,18 +125,13 @@
         background-color: #805ad5;
       }
     
-      .submit-button {
-        @include button-base;
-        background-color: #38a169;
-        margin-right: 0;
+
+      .study-button.disabled, .dictation-button.disabled {
+        opacity: 0.4;
       }
-      .submit-button {
-        @include button-base;
-      }
-      
-      .study-button:disabled, .dictation-button:disabled, .submit-button:disabled {
-        background-color: #4a5568;
-        opacity: 0.6;
+
+      .study-button.hidden {
+        background-color: #38a169;  
       }
       .time{
         display: flex;
@@ -279,10 +276,10 @@
         }
         
         .card-type {
-          background: rgba(129, 140, 248, 0.15); // 浅紫背景
-          color: #818cf8; // 浅紫色文本
+          background: rgba(6, 182, 212, 0.15); // 浅青背景
+          color: #06b6d4; // 浅青色文本
           border-radius: 4px;
-          font-size: 16px;
+          font-size: 18px;
           padding: 2px 6px;
           margin-left: 16px;
         }
@@ -297,8 +294,8 @@
         }
         
         .card-stats {
-          background: rgba(6, 182, 212, 0.15); // 浅青背景
-          color: #06b6d4; // 浅青色文本
+          background: rgba(129, 140, 248, 0.15); // 浅紫背景
+          color: #818cf8; // 浅紫色文本
           border-radius: 4px;
           font-size: 16px;
           padding: 2px 6px;
@@ -496,7 +493,7 @@
           gap: 16px;
           
           .result-card {
-            background: white;
+            background: rgba(255, 255, 255, 0.05);
             border-radius: 12px;
             padding: 16px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
