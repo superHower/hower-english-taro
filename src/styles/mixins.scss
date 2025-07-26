@@ -1,0 +1,136 @@
+// 主题颜色变量
+$primary-color: #1989fa;
+$success-color: #5cb87a;
+$warning-color: #e6a23c;
+$error-color: #f56c6c;
+$info-color: #6f7ad3;
+
+// 文字颜色
+$text-primary: #303133;
+$text-regular: #606266;
+$text-secondary: #909399;
+$text-placeholder: #c0c4cc;
+
+// 边框颜色
+$border-color: #dcdfe6;
+$border-light: #e4e7ed;
+$border-lighter: #ebeef5;
+
+// 背景颜色
+$background-color: #f5f7fa;
+
+// 基础圆角
+$border-radius-base: 4px;
+$border-radius-small: 2px;
+$border-radius-large: 8px;
+$border-radius-circle: 50%;
+
+// 基础阴影
+$box-shadow-base: 0 2px 4px rgba(0, 0, 0, 0.12);
+$box-shadow-light: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+
+// 基础间距
+$spacing-mini: 4px;
+$spacing-small: 8px;
+$spacing-base: 16px;
+$spacing-large: 24px;
+
+// 按钮 mixin
+@mixin button-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 $spacing-large;
+  margin: 0 $spacing-base;
+  border-radius: $border-radius-large;
+  cursor: pointer;
+  transition: all 0.3s;
+
+  font-size: 20px;
+  font-weight: 500;
+  border: none;
+  color: #fff;
+  
+  &:active {
+    opacity: 0.8;
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+@mixin button-variant($background, $color: #fff) {
+  background-color: $background;
+  color: $color;
+}
+
+// 输入框 mixin
+@mixin input-base {
+  width: 100%;
+  padding: $spacing-small;
+  font-size: 28px;
+  border: 2px solid $border-color;
+  border-radius: $border-radius-base;
+  background-color: #fff;
+  transition: all 0.3s;
+  
+  &:focus {
+    border-color: $primary-color;
+    outline: none;
+  }
+  
+  &:disabled {
+    background-color: $background-color;
+    cursor: not-allowed;
+  }
+}
+
+// 卡片 mixin
+@mixin card-base {
+  background-color: #fff;
+  border-radius: $border-radius-base;
+  box-shadow: $box-shadow-base;
+  padding: $spacing-base;
+}
+
+// flex布局 mixin
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+// 文字截断 mixin
+@mixin text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin multi-ellipsis($line: 2) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: $line;
+  -webkit-box-orient: vertical;
+}
+
+// 响应式 mixin
+@mixin responsive($width) {
+  @media screen and (max-width: $width) {
+    @content;
+  }
+}
