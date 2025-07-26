@@ -1,0 +1,124 @@
+.analysis {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  background-color: #f5f7fa;
+  min-height: 100vh;
+  box-sizing: border-box;
+
+  .header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+    
+    .title {
+      font-size: 20px;
+      font-weight: bold;
+      color: #333;
+    }
+  }
+  
+  .card {
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    
+    .card-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 16px;
+      display: block;
+    }
+  }
+  
+  .overview {
+    display: flex;
+    justify-content: space-between;
+    
+    .overview-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      
+      .overview-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #1677ff;
+        margin-bottom: 4px;
+      }
+      
+      .overview-label {
+        font-size: 12px;
+        color: #666;
+      }
+    }
+  }
+  
+  .daily-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    height: 120px;
+    
+    .day-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      
+      .day-bar {
+        width: 20px;
+        background-color: #1677ff;
+        border-radius: 10px 10px 0 0;
+        margin-bottom: 8px;
+        opacity: 0.7;
+        
+        &.active {
+          opacity: 1;
+          background-color: #1677ff;
+        }
+      }
+      
+      .day-label {
+        font-size: 12px;
+        color: #666;
+      }
+    }
+  }
+  
+  .mastery {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    
+    .mastery-item {
+      display: flex;
+      align-items: center;
+      
+      .mastery-progress {
+        height: 8px;
+        background-color: #1677ff;
+        border-radius: 4px;
+        margin-right: 10px;
+      }
+      
+      .mastery-label {
+        font-size: 14px;
+        color: #333;
+        width: 60px;
+      }
+      
+      .mastery-count {
+        font-size: 14px;
+        color: #1677ff;
+        font-weight: bold;
+        margin-left: auto;
+      }
+    }
+  }
+}
