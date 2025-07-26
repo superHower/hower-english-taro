@@ -1,8 +1,10 @@
 import { View, Text, Button, Input, ScrollView, Image, Picker } from '@tarojs/components'
-import Taro, { useLoad } from '@tarojs/taro'
+import { useLoad } from '@tarojs/taro'
 import { useState, useEffect, useRef } from 'react'
 import './index.scss'
 import db from './word'
+import Taro from '@tarojs/taro'
+
 interface Word {
   id: number;
   book: string;
@@ -33,7 +35,7 @@ export default function Index() {
     timePerWord: 10,         // 每个单词的时间(秒)
   })
 
-  const [wordData, setWordData] = useState<Word[]>([])
+  const [wordData, setWordData] = useState<Word[]>()
   const [tableData, setTableData] = useState<Word[]>([])
   const [database, setDatabase] = useState<Word[]>([])
   const [vcnt, setVcnt] = useState("")
@@ -47,6 +49,13 @@ export default function Index() {
   const [windowWidth, setWindowWidth] = useState(0)
   const [showConfigPanel, setShowConfigPanel] = useState(false)
   const [color, setColor] = useState('#ffffff')
+  
+  // 新增状态
+  const [studyMode, setStudyMode] = useState<'none' | 'study' | 'dictation'>('none') // 学习模式
+  const [currentWordIndex, setCurrentWordIndex] = useState(0) // 当前默写单词索引
+  const [showDictationModal, setShowDictationModal] = useState(false) // 是否显示默写弹窗
+  const [currentInput, setCurrentInput] = useState('') // 当前输入的内容
+  const [isCompleted, setIsCompleted] = useState(false) // 是否全部完成
   
   // 计时器引用
   const countdownIntervalRef = useRef<any>(null)
@@ -97,6 +106,7 @@ export default function Index() {
 
   // 选择书本
   const handleBook = (value) => {
+    console.log(value)
     const newSearch = { ...search, book: value }
     setSearch(newSearch)
     
@@ -155,76 +165,83 @@ export default function Index() {
 
   // 处理提交
   const handleSubmit = () => {
-    // 检查答案
-    const newTableData = [...tableData!]
-    let newScore = 0
-    
-    newTableData.forEach((item, index) => {
-      const userInput = item.input?.trim().toLowerCase() || ""
-      const correct = item.en.trim().toLowerCase()
+    if (studyMode === 'dictation') {
+      // 默写模式的提交逻辑
+      const newTableData = [...tableData]
+      let newScore = 0
       
-      if (userInput === correct) {
-        newTableData[index] = { ...item, res: true }
-        newScore++
+      newTableData.forEach((item, index) => {
+        const userInput = item.input?.trim().toLowerCase() || ""
+        const correct = item.en.trim().toLowerCase() // 默写模式比较英文
         
-        // 更新数据库中的数据
-        const newDatabase = [...database]
-        const dbItemIndex = newDatabase.findIndex(dbItem => dbItem.id === item.id)
-        
-        if (dbItemIndex !== -1) {
-          newDatabase[dbItemIndex] = {
-            ...newDatabase[dbItemIndex],
-            cnt: newDatabase[dbItemIndex].cnt + 1,
-            time: Date.now()
+        if (userInput === correct) {
+          newTableData[index] = { ...item, res: true }
+          newScore++
+          
+          // 更新数据库中的数据
+          const newDatabase = [...database]
+          const dbItemIndex = newDatabase.findIndex(dbItem => dbItem.id === item.id)
+          
+          if (dbItemIndex !== -1) {
+            newDatabase[dbItemIndex] = {
+              ...newDatabase[dbItemIndex],
+              cnt: newDatabase[dbItemIndex].cnt + 1,
+              time: Date.now()
+            }
           }
-        }
-        
-        setDatabase(newDatabase)
-      } else {
-        newTableData[index] = { ...item, res: false }
-        
-        // 更新数据库中的数据
-        const newDatabase = [...database]
-        const dbItemIndex = newDatabase.findIndex(dbItem => dbItem.id === item.id)
-        
-        if (dbItemIndex !== -1) {
-          newDatabase[dbItemIndex] = {
-            ...newDatabase[dbItemIndex],
-            cnt: newDatabase[dbItemIndex].cnt + 1,
-            error: newDatabase[dbItemIndex].error + 1,
-            time: Date.now()
+          
+          setDatabase(newDatabase)
+        } else {
+          newTableData[index] = { ...item, res: false }
+          
+          // 更新数据库中的数据
+          const newDatabase = [...database]
+          const dbItemIndex = newDatabase.findIndex(dbItem => dbItem.id === item.id)
+          
+          if (dbItemIndex !== -1) {
+            newDatabase[dbItemIndex] = {
+              ...newDatabase[dbItemIndex],
+              cnt: newDatabase[dbItemIndex].cnt + 1,
+              error: newDatabase[dbItemIndex].error + 1,
+              time: Date.now()
+            }
           }
+          
+          setDatabase(newDatabase)
         }
-        
-        setDatabase(newDatabase)
+      })
+      
+      setTableData(newTableData)
+      setScore(newScore)
+      
+      // 保存到本地存储
+      try {
+        Taro.setStorageSync('word', JSON.stringify(database))
+      } catch (error) {
+        console.error('Storage save error:', error)
       }
-    })
-    
-    setTableData(newTableData)
-    setScore(newScore)
-    
-    // 保存到本地存储
-    try {
-      Taro.setStorageSync('word', JSON.stringify(database))
-    } catch (error) {
-      console.error('Storage save error:', error)
-    }
-    
-    // 显示答案
-    setShowAnswers(true)
-    
-    // 清除计时器
-    if (countdownIntervalRef.current) {
-      clearInterval(countdownIntervalRef.current)
-      countdownIntervalRef.current = null
+      
+      // 显示答案
+      setShowAnswers(true)
+      setShowDictationModal(false)
+      setStudyMode('none')
+      
+      // 清除计时器
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current)
+        countdownIntervalRef.current = null
+      }
     }
   }
 
   // 搜索处理函数
-  const searchHandle = (type) => {
-    setShowAnswers(type)
+  const searchHandle = (isStudyMode) => {
+    setShowAnswers(false)
     setTableData([])
     setScore(0)
+    setCurrentWordIndex(0)
+    setCurrentInput('')
+    setIsCompleted(false)
 
     // 检查是否选择了单词类型
     if (search.type.length === 0) {
@@ -337,14 +354,20 @@ export default function Index() {
 
     setTableData(newTableData)
     
-    // 开始计时
-    setTimeout(() => {
-      startCountdown(type)
-    }, 0)
+    if (isStudyMode) {
+      setStudyMode('study')
+    } else {
+      setStudyMode('dictation')
+      setShowDictationModal(true)
+      // 开始计时
+      setTimeout(() => {
+        startCountdown()
+      }, 0)
+    }
   }
 
   // 计时函数
-  const startCountdown = (type) => {
+  const startCountdown = () => {
     if (countdownIntervalRef.current) {
       clearInterval(countdownIntervalRef.current)
       countdownIntervalRef.current = null
@@ -352,67 +375,74 @@ export default function Index() {
     
     // 使用配置的时间
     const timePerWord = search.type.includes('d') ? config.timePerWord * 2 : config.timePerWord
-    setRemainingTime(tableData!.length * timePerWord)
+    setRemainingTime(tableData.length * timePerWord)
     
-    if (!type) {
-      countdownIntervalRef.current = setInterval(() => {
-        setRemainingTime(prevTime => {
-          if (prevTime > 0) {
-            return prevTime - 1
-          } else {
-            if (countdownIntervalRef.current) {
-              clearInterval(countdownIntervalRef.current)
-              countdownIntervalRef.current = null
-            }
-            handleSubmit()
-            Taro.showToast({
+    countdownIntervalRef.current = setInterval(() => {
+      setRemainingTime(prevTime => {
+        if (prevTime > 0) {
+          return prevTime - 1
+        } else {
+          if (countdownIntervalRef.current) {
+            clearInterval(countdownIntervalRef.current)
+            countdownIntervalRef.current = null
+          }
+          handleSubmit()
+          Taro.showToast({
               title: '时间到！',
               icon: 'none',
               duration: 2000
             })
-            return 0
-          }
-        })
-      }, 1000)
+          return 0
+        }
+      })
+    }, 1000)
+  }
+
+  // 处理默写下一个单词
+  const handleNextWord = (isLast: boolean) => {
+    if (isLast) {
+      handleSubmit()
+    }
+    // 保存当前输入
+    const newTableData = [...tableData]
+    newTableData[currentWordIndex] = { 
+      ...newTableData[currentWordIndex], 
+      input: currentInput 
+    }
+    setTableData(newTableData)
+    
+    if (currentWordIndex < tableData.length - 1) {
+      setCurrentWordIndex(currentWordIndex + 1)
+      setCurrentInput('')
     } else {
-      setScore(0)
-      setRemainingTime(0)
+      // 最后一个单词，标记为完成
+      setIsCompleted(true)
+    }
+  }
+
+  // 处理默写上一个单词
+  const handlePrevWord = () => {
+    if (currentWordIndex > 0) {
+      // 保存当前输入
+      const newTableData = [...tableData]
+      newTableData[currentWordIndex] = { 
+        ...newTableData[currentWordIndex], 
+        input: currentInput 
+      }
+      setTableData(newTableData)
+      
+      setCurrentWordIndex(currentWordIndex - 1)
+      setCurrentInput(tableData[currentWordIndex - 1]?.input || '')
     }
   }
 
   // 计算已完成的输入数量
-  const completedCount = tableData!.filter(item => item.input?.trim() !== '').length
+  const completedCount = tableData.filter(item => item.input?.trim() !== '').length
 
   // 计算进度百分比
-  const progressPercentage = Math.min(Math.round((completedCount / (tableData!.length || 1)) * 100) || 0, 100)
-
-  // 单词输入时，显示速度
-  const changeHandle = () => {
-    if (tableData!.length === 0) return
-    
-    const time = tableData!.length * 10 - remainingTime - completedCount * 10
-    const RATE = search.type.includes('d') ? 20 : 10
-    
-    if (time >= 1.5 * RATE) setColor('#f56c6c')
-    else if (time >= RATE && time < 1.5 * RATE) setColor('#e6a23c')
-    else if (time >= 0 && time < RATE) setColor('#5cb87a')
-    else if (time >= -RATE && time < 0) setColor('#1989fa')
-    else if (time <= -RATE) setColor('#6f7ad3')
-  }
-
-  // 回车自动换行
-  const focusNextInput = (index) => {
-    if (index < tableData!.length - 1) {
-      // 在小程序环境中，我们需要使用Taro的选择器API
-      // 注意：小程序环境中的focus可能需要额外处理
-      // 这里我们简单地移动到下一个输入框，实际使用时可能需要调整
-      const nextIndex = index + 1
-      if (nextIndex < tableData!.length) {
-        // 在实际应用中，可能需要使用Taro.createSelectorQuery获取元素
-        // 并调用.focus()方法，这里简化处理
-      }
-    }
-  }
+  const progressPercentage = studyMode === 'dictation' 
+    ? Math.min(Math.round(((currentWordIndex + 1) / (tableData.length || 1)) * 100) || 0, 100)
+    : Math.min(Math.round((completedCount / (tableData.length || 1)) * 100) || 0, 100)
 
   // 处理默写时间
   const handleTime = (t) => {
@@ -448,213 +478,267 @@ export default function Index() {
     setSearch({ ...search, type: newTypes })
   }
 
-  // 处理单词输入变化
-  const handleInputChange = (index, value) => {
-    const newTableData = [...tableData!]
-    newTableData[index] = { ...newTableData[index], input: value }
-    setTableData(newTableData)
-    changeHandle()
+  // 关闭学习模式
+  const closeLearningMode = () => {
+    setStudyMode('none')
+    setShowDictationModal(false)
+    setCurrentWordIndex(0)
+    setCurrentInput('')
+    setIsCompleted(false)
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current)
+      countdownIntervalRef.current = null
+    }
+  }
+
+  const typeMap = {
+    v: '动词',
+    n: '名词',
+    a: '形容词',
+    o: '其他',
+    d: '短语',
   }
 
   return (
     <View className='index' style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)' }}>
       <View className='top'>
-        <View className='content-left'>
-          {/* 书本选择 */}
-          <View className='select-container'>
-            <Picker
-              mode='selector'
-              range={['选择书本', '7A', '7B', '8A', '8B', '9A', '9B']}
-              value={search.book ? ['7A', '7B', '8A', '8B', '9A', '9B'].indexOf(search.book) + 1 : 0}
-              onChange={(e) => handleBook(['', '7A', '7B', '8A', '8B', '9A', '9B'][e.detail.value])}
+        {/* 书本选择 */}
+        <View className='book-select-group'>
+          {['7A', '7B', '8A', '8B', '9A', '9B'].map((book) => (
+            <View 
+              key={book}
+              className={`book-select-item ${search.book === book ? 'selected' : ''}`}
+              onClick={() => handleBook(book)} // 点击切换选中状态
             >
-              <View className='book-select'>
-                {search.book || '选择书本'}
-              </View>
-            </Picker>
-          </View>
-          
-          {/* 单词类型选择 */}
-          <View className='type-select-container'>
-            <View className='type-options'>
-              <View 
-                className={`type-option ${search.type.includes('v') ? 'selected' : ''}`}
-                onClick={() => handleTypeChange('v')}
-              >
-                {vcnt || '动词'}
-              </View>
-              <View 
-                className={`type-option ${search.type.includes('n') ? 'selected' : ''}`}
-                onClick={() => handleTypeChange('n')}
-              >
-                {ncnt || '名词'}
-              </View>
-              <View 
-                className={`type-option ${search.type.includes('a') ? 'selected' : ''}`}
-                onClick={() => handleTypeChange('a')}
-              >
-                {acnt || '形容词'}
-              </View>
-              <View 
-                className={`type-option ${search.type.includes('o') ? 'selected' : ''}`}
-                onClick={() => handleTypeChange('o')}
-              >
-                {ocnt || '其他'}
-              </View>
-              <View 
-                className={`type-option ${search.type.includes('d') ? 'selected' : ''}`}
-                onClick={() => handleTypeChange('d')}
-              >
-                {dcnt || '短语'}
-              </View>
+              {book}
+              {/* 选中状态的指示图标 */}
+              {search.book === book && (<View className='selected-icon'><Text>✓</Text></View>)}
             </View>
-          </View>
-          
-          <View className='top-down'>
-            {/* 学习配置 */}
-            <View className='config-button-container'>
-              <Button 
-                className='config-button' 
-                onClick={() => setShowConfigPanel(!showConfigPanel)}
-              >
-                学习配置
-              </Button>
+          ))}
+         {/* 学习配置 */}
+          <View className='config-button-container'>
+            <Button 
+              className='config-button' 
+              onClick={() => setShowConfigPanel(!showConfigPanel)}
+            >
+              学习配置
+            </Button>
             
-              {showConfigPanel && (
-                <View className='config-panel'>
-                  <View className='config-item'>
-                    <Text className='config-label'>新单词数量：</Text>
-                    <Input 
-                      type='number' 
-                      className='config-input'
-                      value={config.newWordCount.toString()} 
-                      onInput={(e) => setConfig({...config, newWordCount: parseInt(e.detail.value) || 0})}
-                    />
-                  </View>
-                  <View className='config-item'>
-                    <Text className='config-label'>错误单词数量：</Text>
-                    <Input 
-                      type='number' 
-                      className='config-input'
-                      value={config.errorWordCount.toString()} 
-                      onInput={(e) => setConfig({...config, errorWordCount: parseInt(e.detail.value) || 0})}
-                    />
-                  </View>
-                  <View className='config-item'>
-                    <Text className='config-label'>复习单词数量：</Text>
-                    <Input 
-                      type='number' 
-                      className='config-input'
-                      value={config.reviewWordCount.toString()} 
-                      onInput={(e) => setConfig({...config, reviewWordCount: parseInt(e.detail.value) || 0})}
-                    />
-                  </View>
-                  <View className='config-item'>
-                    <Text className='config-label'>每个单词时间(秒)：</Text>
-                    <Input 
-                      type='number' 
-                      className='config-input'
-                      value={config.timePerWord.toString()} 
-                      onInput={(e) => setConfig({...config, timePerWord: parseInt(e.detail.value) || 5})}
-                    />
-                  </View>
-                  <View className='config-presets'>
-                    <Button className='preset-button' onClick={() => setPreset('light')}>轻松模式</Button>
-                    <Button className='preset-button' onClick={() => setPreset('normal')}>标准模式</Button>
-                    <Button className='preset-button' onClick={() => setPreset('intensive')}>强化模式</Button>
-                  </View>
+            {showConfigPanel && (
+              <View className='config-panel'>
+                <View className='config-item'>
+                  <Text className='config-label'>新单词数量：</Text>
+                  <Input 
+                    type='number' 
+                    className='config-input'
+                    value={config.newWordCount.toString()} 
+                    onInput={(e) => setConfig({...config, newWordCount: parseInt(e.detail.value) || 0})}
+                  />
                 </View>
-              )}
-            </View>
-            
-            <View className='time'>
-              <Text>{Math.floor(remainingTime / 60)} m {remainingTime % 60} s</Text>
-            </View>
-            {/* <View className='score'>
-              <Text>得分：</Text>
-              <Text className='score-value'>{score}</Text>
-            </View> */}
-
-            <Button className='study-button' 
-              onClick={() => searchHandle(true)} 
-              disabled={!search.book || search.type.length === 0}
-            >
-            背诵
-            </Button>
-            <Button className='dictation-button' 
-              onClick={() => searchHandle(false)} 
-              disabled={!search.book || search.type.length === 0}
-            >
-              默写
-            </Button>
-            <Button className='submit-button' onClick={handleSubmit}>提交</Button>
+                <View className='config-item'>
+                  <Text className='config-label'>错误单词数量：</Text>
+                  <Input 
+                    type='number' 
+                    className='config-input'
+                    value={config.errorWordCount.toString()} 
+                    onInput={(e) => setConfig({...config, errorWordCount: parseInt(e.detail.value) || 0})}
+                  />
+                </View>
+                <View className='config-item'>
+                  <Text className='config-label'>复习单词数量：</Text>
+                  <Input 
+                    type='number' 
+                    className='config-input'
+                    value={config.reviewWordCount.toString()} 
+                    onInput={(e) => setConfig({...config, reviewWordCount: parseInt(e.detail.value) || 0})}
+                  />
+                </View>
+                <View className='config-item'>
+                  <Text className='config-label'>每个单词时间(秒)：</Text>
+                  <Input 
+                    type='number' 
+                    className='config-input'
+                    value={config.timePerWord.toString()} 
+                    onInput={(e) => setConfig({...config, timePerWord: parseInt(e.detail.value) || 5})}
+                  />
+                </View>
+                <View className='config-presets'>
+                  <Button className='preset-button' onClick={() => setPreset('light')}>轻松模式</Button>
+                  <Button className='preset-button' onClick={() => setPreset('normal')}>标准模式</Button>
+                  <Button className='preset-button' onClick={() => setPreset('intensive')}>强化模式</Button>
+                </View>
+              </View>
+            )}
           </View>
         </View>
+        
+        {/* 单词类型选择 */}
+        <View className='type-container'>
+            <View className={`type-option ${search.type.includes('v') ? 'selected' : ''}`} onClick={() => handleTypeChange('v')}>{vcnt || typeMap['v']}</View>
+            <View className={`type-option ${search.type.includes('n') ? 'selected' : ''}`} onClick={() => handleTypeChange('n')}>{ncnt || typeMap['n']}</View>
+            <View className={`type-option ${search.type.includes('a') ? 'selected' : ''}`} onClick={() => handleTypeChange('a')}>{acnt || typeMap['a']}</View>
+            <View className={`type-option ${search.type.includes('o') ? 'selected' : ''}`} onClick={() => handleTypeChange('o')}>{ocnt || typeMap['o']}</View>
+            <View className={`type-option ${search.type.includes('d') ? 'selected' : ''}`} onClick={() => handleTypeChange('d')}>{dcnt || typeMap['d']}</View>
+        </View>
+        
+        <View className='top-down'>
+          <Button 
+            className='study-button' 
+            onClick={() => searchHandle(true)} 
+            disabled={!search.book || search.type.length === 0}
+          >
+            背诵
+          </Button>
+          <Button 
+            className='dictation-button' 
+            onClick={() => searchHandle(false)} 
+            disabled={!search.book || search.type.length === 0}
+          >
+            默写
+          </Button>
+          {studyMode === 'dictation' && isCompleted && (
+            <Button className='submit-button' onClick={handleSubmit}>提交</Button>
+          )}
+          {studyMode !== 'none' && (
+            <Button className='submit-button' onClick={closeLearningMode}>关闭</Button>
+          )}
+        </View>
+   
       </View>
       
       <View className='content'>
-        <ScrollView 
-          className='word-table'
-          scrollY
-          style={{ height: 'calc(100% - 40px)', width: windowWidth + 'px' }}
-        >
-          {tableData!.length > 0 ? (
-            <View className='table'>
-              <View className='table-header'>
-                <View className='th th-index'>序号</View>
-                <View className='th th-input'>输入</View>
-                <View className='th th-cn'>中文</View>
-                <View className='th th-en'>英文</View>
-                <View className='th th-stats'>战绩</View>
-                <View className='th th-type'>类型</View>
-                <View className='th th-unit'>单元</View>
-                <View className='th th-time'>默写时间</View>
-              </View>
-              
-              {tableData!.map((item, index) => (
-                <View className='table-row' key={item.id}>
-                  <View className='td td-index'>{index + 1}</View>
-                  <View className='td td-input'>
-                    <Input 
-                      className='word-input'
-                      value={item.input || ''}
-                      onInput={(e) => handleInputChange(index, e.detail.value)}
-                      onConfirm={() => focusNextInput(index)}
-                    />
+        {/* 背诵模式 - 单元格展示 */}
+        {studyMode === 'study' && (
+          <ScrollView 
+            className='word-cards'
+            scrollY
+            style={{ height: 'calc(100% - 40px)', width: windowWidth + 'px' }}
+          >
+            <View className='cards-container'>
+              {tableData.map((item, index) => (
+                <View className='word-card' key={item.id}>
+                  <View className='card-header'>
+                    <Text className='card-en'>{item.en}</Text>
+                    <View className='card-lable'>
+                      <Text className='card-unit'>Unit {item.unit}</Text>
+                      <Text className='card-type'>{typeMap[item.type]}</Text>
+                      <Text className='card-index'>{index + 1}</Text>
+                    </View>
                   </View>
-                  <View className='td td-cn'>{item.cn}</View>
-                  <View className='td td-en'>
-                    {showAnswers && (
-                      <Text className={item.res ? 'ok' : 'err'}>{item.en}</Text>
-                    )}
+                  <View className='card-content'>
+                    <Text className='card-cn'>{item.cn}</Text>
+                    <Text className='card-stats'>战绩: {item.error}/{item.cnt}</Text>
+                    <Text className='card-time'>{handleTime(item.time)}</Text>
+                   
                   </View>
-                  <View className='td td-stats'>{item.error} / {item.cnt}</View>
-                  <View className='td td-type'>{item.type}</View>
-                  <View className='td td-unit'>{item.unit}</View>
-                  <View className='td td-time'>{handleTime(item.time)}</View>
+      
                 </View>
               ))}
             </View>
-          ) : (
-            <View className='empty-state'>
-              <Text>请选择书本和单词类型，然后点击背诵或默写按钮开始学习</Text>
-            </View>
-          )}
-        </ScrollView>
-        
-        <View className='progress-container' style={{width: windowWidth + 'px'}}>
-          <View className='progress-bar'>
-            <View 
-              className='progress-inner' 
-              style={{
-                width: `${progressPercentage}%`,
-                backgroundColor: color
-              }}
-            >
-              <Text className='progress-text'>{progressPercentage}%</Text>
+          </ScrollView>
+        )}
+
+        {/* 默写模式 - 弹出组件 */}
+        {showDictationModal && (
+          <View className='dictation-modal'>
+            <View className='modal-overlay'></View>
+            <View className='modal-content'>
+              <View className='modal-header'>
+                <Text className='modal-title'>默写</Text>
+                <Text className='time'>{ Math.floor(remainingTime / 60) } m { remainingTime % 60 } s</Text>
+                <Text className='modal-progress'>
+                  {currentWordIndex + 1} / {tableData.length}
+                </Text>
+              </View>
+              
+              {tableData.length > 0 && currentWordIndex < tableData.length && (
+                <View className='dictation-form'>
+                  <View className='form-item'>
+                    <Text className='form-label'>{tableData[currentWordIndex]?.cn}</Text>
+                    <Input 
+                      className='form-input'
+                      placeholder='请输入英文意思'
+                      value={currentInput}
+                      onInput={(e) => setCurrentInput(e.detail.value)}
+                    />
+                  </View>
+                  
+                  <View className='form-buttons'>
+                    <Button className='prev-button' onClick={handlePrevWord} disabled={currentWordIndex === 0}>
+                      上一个
+                    </Button>
+                    <Button className='next-button' onClick={() => handleNextWord(currentWordIndex === tableData.length - 1)}>
+                      {currentWordIndex === tableData.length - 1 ? '完成' : '下一个'
+                    }</Button>
+                  </View>
+
+                  <View className='progress-container'>
+                    <View className='progress-bar'>
+                      <View 
+                        className='progress-inner' 
+                        style={{
+                          width: `${progressPercentage}%`,
+                          backgroundColor: color
+                        }}
+                      >
+                        <Text className='progress-text'>{progressPercentage}%</Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              )}
+
+              {isCompleted && (
+                <View className='completion-message'>
+                  <Text>所有单词默写完成！点击提交按钮查看结果。</Text>
+                </View>
+              )}
             </View>
           </View>
-        </View>
+        )}
+
+        {/* 结果展示 */}
+        {showAnswers && studyMode === 'none' && (
+          <ScrollView 
+            className='result-view'
+            scrollY
+            style={{ height: 'calc(100% - 40px)', width: windowWidth + 'px' }}
+          >
+            <View className='result-container'>
+              <View className='result-header'>
+                <Text className='result-title'>默写结果</Text>
+                <Text className='result-score'>得分: {score}/{tableData.length}</Text>
+              </View>
+              
+              <View className='result-cards'>
+                {tableData.map((item, index) => (
+                  <View className={`result-card ${item.res ? 'correct' : 'incorrect'}`} key={item.id}>
+                    <View className='result-card-header'>
+                      <Text className='result-index'>{index + 1}</Text>
+                      <Text className={`result-status ${item.res ? 'correct' : 'incorrect'}`}>
+                        {item.res ? '✓' : '✗'}
+                      </Text>
+                    </View>
+                    <View className='result-card-content'>
+                      <Text className='result-en'>{item.en}</Text>
+                      <Text className='result-cn-correct'>{item.cn}</Text>
+                      <Text className='result-cn-input'>你的答案: {item.input || '(未填写)'}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </ScrollView>
+        )}
+
+        {/* 默认状态 */}
+        {studyMode === 'none' && !showAnswers && (
+          <View className='empty-state' style={{ height: 'calc(100% - 40px)', width: windowWidth + 'px' }}>
+            <Text>请选择书本和单词类型，然后点击背诵或默写按钮开始学习</Text>
+          </View>
+        )}
+        
+
       </View>
     </View>
   )
