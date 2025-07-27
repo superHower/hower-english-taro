@@ -36,6 +36,7 @@ export default function Index() {
     timePerWord: 10,         // 每个单词的时间(秒)
   })
 
+  const tableDataRef = useRef<Word[]>([]);
   const [wordData, setWordData] = useState<Word[]>()
   const [tableData, setTableData] = useState<Word[]>([])
   const [database, setDatabase] = useState<Word[]>([])
@@ -56,6 +57,7 @@ export default function Index() {
   const [studyMode, setStudyMode] = useState<'study' | 'dictation' | 'done' | 'none'>('none') // 学习模式
   const [currentWordIndex, setCurrentWordIndex] = useState(0) // 当前默写单词索引
   const [currentInput, setCurrentInput] = useState('') // 当前输入的内容
+  const inputRef = useRef<any>(null)
   
   // 计时器引用
   const countdownIntervalRef = useRef<any>(null)
@@ -91,6 +93,10 @@ export default function Index() {
       }
     }
   })
+  
+  useEffect(() => {
+    tableDataRef.current = tableData;
+  }, [tableData]);
 
   // 选择书本
   const handleBook = (value) => {
@@ -168,70 +174,68 @@ export default function Index() {
   }
 
   // 处理提交
-const handleSubmit = () => {
-  // 创建 tableData 的副本
-  const newTableData = [...tableData];
-  
-  // 保存当前输入到当前单词
-  newTableData[currentWordIndex] = { 
-    ...newTableData[currentWordIndex], 
-    input: currentInput 
-  };
-  
-  let newScore = 0;
-  
-  // 创建数据库的副本 - 在循环外部定义
-  const newDatabase = [...database];
-  
-  // 处理所有单词
-  newTableData.forEach((item, index) => {
-    const userInput = item.input?.trim().toLowerCase() || "";
-    const correct = item.en.trim().toLowerCase();
-    const isCorrect = userInput === correct;
+  const handleSubmit = () => {
+    // 使用 ref 获取最新数据
+    const currentTableData = [...tableDataRef.current];
     
-    newTableData[index] = { 
-      ...item, 
-      res: isCorrect 
-    };
-    
-    if (isCorrect) newScore++;
-    
-    // 在数据库副本中查找对应项
-    const dbItemIndex = newDatabase.findIndex(dbItem => dbItem.id === item.id);
-    
-    if (dbItemIndex !== -1) {
-      const dbItem = newDatabase[dbItemIndex];
-      newDatabase[dbItemIndex] = {
-        ...dbItem,
-        cnt: dbItem.cnt + 1,
-        error: isCorrect ? dbItem.error : dbItem.error + 1,
-        time: Date.now()
+    // 保存当前输入到当前单词
+    if (currentTableData[currentWordIndex]) {
+      currentTableData[currentWordIndex] = { 
+        ...currentTableData[currentWordIndex], 
+        input: currentInput 
       };
     }
-  });
-  
-  // 更新状态
-  setTableData(newTableData);
-  setScore(newScore);
-  setDatabase(newDatabase); // 使用更新后的数据库副本
-  
-  // 保存到本地存储 - 使用 newDatabase 而不是 database
-  try {
-    Taro.setStorageSync('word', JSON.stringify(newDatabase));
-  } catch (error) {
-    console.error('Storage save error:', error);
-  }
-  
-  // 显示答案
-  setStudyMode('done');
+    
+    let newScore = 0;
+    
+    // 创建数据库的副本
+    const newDatabase = [...database];
+    
+    // 处理所有单词
+    currentTableData.forEach((item, index) => {
+      const userInput = item.input?.trim().toLowerCase() || "";
+      const correct = item.en.trim().toLowerCase();
+      const isCorrect = userInput === correct;
+      
+      currentTableData[index] = { ...item, res: isCorrect };
+      
+      if (isCorrect) newScore++;
+      
+      // 在数据库副本中查找对应项
+      const dbItemIndex = newDatabase.findIndex(dbItem => dbItem.id === item.id);
+      
+      if (dbItemIndex !== -1) {
+        const dbItem = newDatabase[dbItemIndex];
+        newDatabase[dbItemIndex] = {
+          ...dbItem,
+          cnt: dbItem.cnt + 1,
+          error: isCorrect ? dbItem.error : dbItem.error + 1,
+          time: Date.now()
+        };
+      }
+    });
+    
+    // 更新状态
+    setTableData(currentTableData);
+    setScore(newScore);
+    setDatabase(newDatabase);
+    
+    // 保存到本地存储
+    try {
+      Taro.setStorageSync('word', JSON.stringify(newDatabase));
+    } catch (error) {
+      console.error('Storage save error:', error);
+    }
+    
+    // 显示答案
+    setStudyMode('done');
 
-  // 清除计时器
-  if (countdownIntervalRef.current) {
-    clearInterval(countdownIntervalRef.current);
-    countdownIntervalRef.current = null;
-  }
-};
-
+    // 清除计时器
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+  };
   // 搜索处理函数
   const searchHandle = (isStudyMode) => {
     setTableData([])
@@ -379,73 +383,112 @@ const handleSubmit = () => {
   // 计时函数
   const startCountdown = () => {
     if (countdownIntervalRef.current) {
-      clearInterval(countdownIntervalRef.current)
-      countdownIntervalRef.current = null
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
     }
     
     // 使用配置的时间
-    const timePerWord = search.type.includes('d') ? config.timePerWord * 2 : config.timePerWord
-    setRemainingTime(tableData.length * timePerWord)
+    const timePerWord = search.type.includes('d') ? config.timePerWord * 2 : config.timePerWord;
+    // 使用 ref 获取最新长度
+    const totalTime = tableDataRef.current.length * timePerWord;
+    setRemainingTime(totalTime);
     
     countdownIntervalRef.current = setInterval(() => {
       setRemainingTime(prevTime => {
         if (prevTime > 0) {
-          return prevTime - 1
+          return prevTime - 1;
         } else {
           if (countdownIntervalRef.current) {
-            clearInterval(countdownIntervalRef.current)
-            countdownIntervalRef.current = null
+            clearInterval(countdownIntervalRef.current);
+            countdownIntervalRef.current = null;
           }
-          handleSubmit()
-          Taro.showToast({
-              title: '时间到！',
-              icon: 'none',
-              duration: 2000
-            })
-          return 0
+          handleSubmit();
+          Taro.showToast({ title: '时间到！', icon: 'none', duration: 2000});
+          return 0;
         }
-      })
-    }, 1000)
-  }
-
-  // 处理默写下一个单词
+      });
+    }, 1000);
+  };
+  // 进度条颜色处理函数
+  const progressHandle = () => {
+    if (tableData.length === 0) return;
+    
+    // 计算每个单词的预期时间（短语类型时间加倍）
+    const timePerWord = search.type.includes('d') ? config.timePerWord * 2 : config.timePerWord;
+    const timeUsed = (tableData.length * timePerWord) - remainingTime; // 计算已用时间
+    const expectedTime = completedCount * timePerWord;// 计算预期用时（已完成单词 * 每个单词时间）
+    const timeDiff = timeUsed - expectedTime;// 计算时间差（实际用时 - 预期用时）
+    
+    // 根据时间差设置不同的颜色
+    if (timeDiff >= 1.5 * timePerWord) {
+      setProgressColor('#f56c6c'); // 红色 - 严重超时
+    } else if (timeDiff >= timePerWord && timeDiff < 1.5 * timePerWord) {
+      setProgressColor('#e6a23c'); // 橙色 - 超时
+    } else if (timeDiff >= 0 && timeDiff < timePerWord) {
+      setProgressColor('#5cb87a'); // 绿色 - 正常
+    } else if (timeDiff >= -timePerWord && timeDiff < 0) {
+      setProgressColor('#1989fa'); // 蓝色 - 提前
+    } else if (timeDiff < -timePerWord) {
+      setProgressColor('#6f7ad3'); // 紫色 - 大幅提前
+    }
+  };
+  // 处理默写下一个单词（优化版本）
   const handleNextWord = () => {
     // 保存当前输入
-    setTableData(prevData => {
-      const newData = [...prevData];
-      newData[currentWordIndex] = { ...newData[currentWordIndex], input: currentInput };
-      return newData;
-    });
-
-    if (currentWordIndex < tableData.length - 1) {
-      setCurrentWordIndex(currentWordIndex + 1)
-      setCurrentInput('')
-    } else {
-      handleSubmit()
-    }
-  }
-
-  // 处理默写上一个单词
-  const handlePrevWord = () => {
-    if (currentWordIndex > 0) {
-      // 保存当前输入
-      const newTableData = [...tableData]
+    const newTableData = [...tableDataRef.current];
+    if (newTableData[currentWordIndex]) {
       newTableData[currentWordIndex] = { 
         ...newTableData[currentWordIndex], 
         input: currentInput 
-      }
-      setTableData(newTableData)
-      
-      setCurrentWordIndex(currentWordIndex - 1)
-      setCurrentInput(tableData[currentWordIndex - 1]?.input || '')
+      };
+      setTableData(newTableData);
     }
-  }
+    
+    const nextIndex = currentWordIndex + 1;
+  
+    if (nextIndex < tableDataRef.current.length) {
+      setCurrentWordIndex(nextIndex);
+      // 使用 ref 获取最新值
+      setCurrentInput(tableDataRef.current[nextIndex]?.input || '');
+      progressHandle();
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 0);
+    } else {
+      handleSubmit();
+    }
+  };
 
-  // 计算已完成的输入数量
-  const completedCount = tableData.filter(item => item.input?.trim() !== '').length
-  // 计算进度百分比
-  const progressPercentage =  Math.min(Math.round((completedCount / (tableData.length || 1)) * 100) || 0, 100)
+  // 处理默写上一个单词（优化版本）
+  const handlePrevWord = () => {
+    if (currentWordIndex > 0) {
+      // 保存当前输入
+      const newTableData = [...tableDataRef.current];
+      newTableData[currentWordIndex] = { 
+        ...newTableData[currentWordIndex], 
+        input: currentInput 
+      };
+      setTableData(newTableData);
+      
+      const prevIndex = currentWordIndex - 1;
+      setCurrentWordIndex(prevIndex);
+      // 使用 ref 获取最新值
+      setCurrentInput(tableDataRef.current[prevIndex]?.input || '');
+      progressHandle();
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 0);
+    }
+  };
 
+  const completedCount = tableDataRef.current.filter(
+    item => item.input?.trim() !== ''
+  ).length;
+  
+  const progressPercentage = Math.min(
+    Math.round((completedCount / (tableDataRef.current.length || 1)) * 100) || 0, 
+    100
+  );
   // 处理默写时间
   const handleTime = (t) => {
     const diff = Date.now() - t
@@ -647,33 +690,32 @@ const handleSubmit = () => {
                     <Text className='form-label'>{tableData[currentWordIndex]?.cn}</Text>
                     <Input 
                       className='form-input'
+                      ref={inputRef}
                       placeholder='请输入英文意思'
                       value={currentInput}
                       onInput={(e) => setCurrentInput(e.detail.value)}
+                      onConfirm={() => handleNextWord()} 
+                      focus={true}
                     />
                   </View>
                   
                   <View className='form-buttons'>
-                    <Button className='prev-button' onClick={handlePrevWord} disabled={currentWordIndex === 0}>
-                      上一个
-                    </Button>
-                    <Button className='next-button' onClick={() => handleNextWord()}>
-                      {currentWordIndex === tableData.length - 1 ? '完成' : '下一个'
-                    }</Button>
+                    {currentWordIndex != 0 && (
+                      <Button className='prev-button' onClick={handlePrevWord}>上一个</Button>
+                    )}
                   </View>
 
                   <View className='progress-container'>
-                    <View className='progress-bar'>
-                      <Progress 
-                        percent={progressPercentage}
-                        showInfo
-                        borderRadius={5}
-                        strokeWidth={16}
-                        color={progressColor}
-                      >
-                      </Progress>
-                    </View>
+                    <Progress 
+                      percent={progressPercentage}
+                      showInfo
+                      borderRadius={5}
+                      strokeWidth={16}
+                      color={progressColor}
+                    >
+                    </Progress>
                   </View>
+
                 </View>
               )}
 
@@ -704,7 +746,7 @@ const handleSubmit = () => {
                     </View>
                     
                     <Text className='result-correct'>{item.en}</Text>
-                    {!item.res && <Text className='result-input'>{item.input || '(blank)'}</Text>}
+                    {!item.res && <Text className='result-input'>{item.input || '【 B L A N K 】'}</Text>}
                     
                   </View>
                 ))}
