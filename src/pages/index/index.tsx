@@ -564,7 +564,10 @@ export default function Index() {
           ))}
          {/* 学习配置 */}
           <View className='config-button-container'>
-            <Button className='config-button' onClick={() => setShowConfigPanel(!showConfigPanel)}>学习配置</Button>
+            <Button className='config-button' 
+              onClick={() => setShowConfigPanel(!showConfigPanel)}>
+              学习配置
+            </Button>
             
             {showConfigPanel && (
               <View className='config-panel'>
@@ -613,29 +616,27 @@ export default function Index() {
             )}
           </View>
         </View>
-        
-        <View className='top-down'>
-          <View className='type-selector'>
-            {search.type.map((type) => (
-              <View key={type} className='type-item'>{typeMap[type]}</View>
-            ))}
-          </View>
-
-          {search.book && search.type.length > 0 &&
-            <Image className='switch-icon' src={switchPng} onClick={() => hiddenHandle()} />
-          }
-     
-          <Button 
-            className={`dictation-button ${!search.book || search.type.length === 0 || moDisable ? 'disabled' : ''}`} 
-            onClick={() => searchHandle(false)} 
-            disabled={!search.book || search.type.length === 0 || moDisable}
-          >
-            默写
-          </Button>
-          
-        </View>
       </View>
-      
+
+      <View className='top-down'>
+        <View className='type-selector'>
+          {search.type.map((type) => (
+            <View key={type} className='type-item'>{typeMap[type]}</View>
+          ))}
+        </View>
+        {search.book && search.type.length > 0 &&
+          <Image className='switch-icon' src={switchPng} onClick={() => hiddenHandle()} />
+        }
+    
+        <Button 
+          className={`dictation-button ${!search.book || search.type.length === 0 || moDisable ? 'disabled' : ''}`} 
+          onClick={() => searchHandle(false)} 
+          disabled={!search.book || search.type.length === 0 || moDisable}
+        >
+          默写
+        </Button>
+        
+      </View>
       <View className='content'>
         {/* 背诵模式 - 单元格展示 */}
         {studyMode === 'study' && (
