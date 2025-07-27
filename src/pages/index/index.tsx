@@ -9,7 +9,7 @@ import switchPng from '../../assets/icons/switch.png'
 interface Word {
   id: number;
   book: string;
-  unit: number;
+  unit: number | string;
   type: string;
   en: string;
   cn: string;
