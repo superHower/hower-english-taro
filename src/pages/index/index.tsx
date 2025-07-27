@@ -171,6 +171,7 @@ export default function Index() {
       default:
         break
     }
+    setShowConfigPanel(!showConfigPanel)
   }
 
   // 处理提交
