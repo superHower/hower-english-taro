@@ -43,7 +43,7 @@
         border: 1px solid rgba(255, 255, 255, 0.1); // 边框
         border-radius: 24px; // 圆角设计
         color: #e2e8f0; // 文字颜色
-        font-size: 20px;
+        font-size: 30px;
         cursor: pointer;
         transition: all 0.2s ease;
       
@@ -79,27 +79,7 @@
       
 
     }
-    /* 类型选择 */
-    .type-container {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      width: 100%;
-      .type-option {
-        padding: 6px 12px;
-        border-radius: 5px;
-        background-color: #2a2a42;
-        border: 1px solid #3a3a5a;
-        cursor: pointer;
-        font-size: 20px;
-        transition: all 0.3s ease;
-      }
-      .type-option.selected {
-        background-color: #4a5568;
-        border-color: #6b7280;
-      }
-      
-    }
+
     
     
     /* 顶部下方区域 */
@@ -108,6 +88,27 @@
       align-items: center;
       justify-content: space-between;
       width: 100%;
+
+  
+
+      .type-selector {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 10px;
+        .type-item {
+         
+          display: block;
+          border-radius: 4rpx;
+          font-size: 20rpx;
+          padding: 4rpx 8rpx;
+
+          background-color: rgba(56, 178, 172, 0.2);
+          border-color: rgba(56, 178, 172, 0.5);
+          color: #81e6d9;
+        }
+      }
+
     
       .switch-icon {
         width: 36px;
@@ -545,5 +546,142 @@
       padding: 40px 20px;
     }
     
+  }
+    /* 类型选择 */
+    .type-indicator {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      padding: 10px 15px;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      margin: 10px 0;
+      min-height: 40px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      position: relative;
+      
+      .indicator-label {
+        color: #a0aec0;
+        margin-right: 8px;
+        font-size: 24px;
+      }
+      
+      .indicator-placeholder {
+        color: #718096;
+        font-style: italic;
+      }
+      
+      .type-tag {
+        background-color: rgba(66, 153, 225, 0.2);
+        color: #63b3ed;
+        padding: 3px 8px;
+        border-radius: 4px;
+        margin: 2px 4px;
+        font-size: 20px;
+      }
+      
+      .indicator-arrow {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #63b3ed;
+      }
+    }
+  
+  /* 类型选择器容器 */
+  .type-selector-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+  
+  .type-selector-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1001;
+  }
+  
+  .type-selector-content {
+    position: relative;
+    z-index: 1002;
+    background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+    border-radius: 20px 20px 0 0;
+    padding: 20px;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+    
+    .selector-header {
+      text-align: center;
+      margin-bottom: 8px;
+      
+      .selector-title {
+        font-size: 24px;
+        font-weight: bold;
+        color: #fff;
+        display: block;
+      }
+      
+      .selector-subtitle {
+        font-size: 20px;
+        color: #a0aec0;
+      }
+    }
+    
+    .type-options {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 20px;
+      
+      .type-option {
+        background-color: rgba(74, 85, 104, 0.5);
+        border: 1px solid rgba(113, 128, 150, 0.3);
+        border-radius: 8px;
+        padding: 12px 15px;
+        margin-top: 16px;
+        text-align: center;
+        color: #e2e8f0;
+        position: relative;
+        transition: all 0.3s ease;
+        
+        &.selected {
+          background-color: rgba(56, 178, 172, 0.2);
+          border-color: rgba(56, 178, 172, 0.5);
+          color: #81e6d9;
+        }
+        
+        .check-icon {
+          position: absolute;
+          top: 5px;
+          right: 5px;
+          font-size: 12px;
+          color: #38b2ac;
+        }
+      }
+    }
+    
+    .confirm-button {
+      background: linear-gradient(90deg, #4299e1, #38b2ac);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0 12px;
+      font-size: 24px;
+      text-align: center;
+      
+      &[disabled] {
+        opacity: 0.6;
+        background: linear-gradient(90deg, #2c5282, #2c7a7b);
+      }
+    }
   }
 }

@@ -53,6 +53,9 @@ export default function Index() {
   const [moDisable, setMoDisable] = useState(true) // 是否禁止默写
   const [hiddenMode, setHiddenMode] = useState<'no' | 'en' | 'cn'>('no')
   
+  // 新增状态 - 控制类型选择面板显示
+  const [showTypeSelector, setShowTypeSelector] = useState(false)
+  
   // 新增状态
   const [studyMode, setStudyMode] = useState<'study' | 'dictation' | 'done' | 'none'>('none') // 学习模式
   const [currentWordIndex, setCurrentWordIndex] = useState(0) // 当前默写单词索引
@@ -84,7 +87,6 @@ export default function Index() {
       // 出错时使用默认数据
       setDatabase(db)
     }
-    // 小程序环境不需要监听窗口大小变化
     
     // 组件卸载时清理
     return () => {
@@ -154,6 +156,7 @@ export default function Index() {
     setOcnt(`其他: ${oc}/${oe}/${ot}`)
     setMoDisable(true)
     setStudyMode('none')
+    setShowTypeSelector(true)
   }
 
   // 设置预设配置
@@ -237,6 +240,7 @@ export default function Index() {
       countdownIntervalRef.current = null;
     }
   };
+  
   // 搜索处理函数
   const searchHandle = (isStudyMode) => {
     setTableData([])
@@ -359,8 +363,12 @@ export default function Index() {
       setStudyMode('study')
       setMoDisable(false)
     } else {
-      if(tableData.length === 0) {
-        setMoDisable(true)
+      if(tableData.length < totalTarget) {
+        Taro.showToast({
+          title: `单词数量少于设定目标：${totalTarget}个!`,
+          icon: 'none',
+          duration: 2000
+        })
         return
       }
       setStudyMode('dictation')      // 开始计时
@@ -368,6 +376,9 @@ export default function Index() {
         startCountdown()
       }, 0)
     }
+    
+    // 关闭类型选择面板
+    setShowTypeSelector(false)
   }
 
   // 隐藏函数
@@ -410,6 +421,7 @@ export default function Index() {
       });
     }, 1000);
   };
+  
   // 进度条颜色处理函数
   const progressHandle = () => {
     if (tableData.length === 0) return;
@@ -433,7 +445,8 @@ export default function Index() {
       setProgressColor('#6f7ad3'); // 紫色 - 大幅提前
     }
   };
-  // 处理默写下一个单词（优化版本）
+  
+  // 处理默写下一个单词
   const handleNextWord = () => {
     // 保存当前输入
     const newTableData = [...tableDataRef.current];
@@ -460,7 +473,7 @@ export default function Index() {
     }
   };
 
-  // 处理默写上一个单词（优化版本）
+  // 处理默写上一个单词
   const handlePrevWord = () => {
     if (currentWordIndex > 0) {
       // 保存当前输入
@@ -490,6 +503,7 @@ export default function Index() {
     Math.round((completedCount / (tableDataRef.current.length || 1)) * 100) || 0, 
     100
   );
+  
   // 处理默写时间
   const handleTime = (t) => {
     const diff = Date.now() - t
@@ -522,9 +536,7 @@ export default function Index() {
     }
     
     setSearch({ ...search, type: newTypes })
-    setMoDisable(true)
   }
-
 
   const typeMap = {
     v: '动词',
@@ -602,29 +614,17 @@ export default function Index() {
           </View>
         </View>
         
-        {/* 单词类型选择 */}
-        <View className='type-container'>
-            <View className={`type-option ${search.type.includes('v') ? 'selected' : ''}`} onClick={() => handleTypeChange('v')}>{vcnt || typeMap['v']}</View>
-            <View className={`type-option ${search.type.includes('n') ? 'selected' : ''}`} onClick={() => handleTypeChange('n')}>{ncnt || typeMap['n']}</View>
-            <View className={`type-option ${search.type.includes('a') ? 'selected' : ''}`} onClick={() => handleTypeChange('a')}>{acnt || typeMap['a']}</View>
-            <View className={`type-option ${search.type.includes('o') ? 'selected' : ''}`} onClick={() => handleTypeChange('o')}>{ocnt || typeMap['o']}</View>
-            <View className={`type-option ${search.type.includes('d') ? 'selected' : ''}`} onClick={() => handleTypeChange('d')}>{dcnt || typeMap['d']}</View>
-        </View>
-        
         <View className='top-down'>
-          <Button 
-            className={`study-button ${!search.book || search.type.length === 0 ? 'disabled' : ''}`} 
-            onClick={() => searchHandle(true)} 
-            disabled={!search.book || search.type.length === 0}
-          >
-            背诵
-          </Button>
+          <View className='type-selector'>
+            {search.type.map((type) => (
+              <View key={type} className='type-item'>{typeMap[type]}</View>
+            ))}
+          </View>
 
           {search.book && search.type.length > 0 &&
             <Image className='switch-icon' src={switchPng} onClick={() => hiddenHandle()} />
           }
      
-
           <Button 
             className={`dictation-button ${!search.book || search.type.length === 0 || moDisable ? 'disabled' : ''}`} 
             onClick={() => searchHandle(false)} 
@@ -632,9 +632,8 @@ export default function Index() {
           >
             默写
           </Button>
-
+          
         </View>
-   
       </View>
       
       <View className='content'>
@@ -762,9 +761,69 @@ export default function Index() {
             <Text>请选择书本和单词类型，然后点击背诵或默写按钮开始学习</Text>
           </View>
         )}
-        
-
       </View>
+      
+      {/* 底部弹出的类型选择面板 */}
+      {showTypeSelector && (
+        <View className="type-selector-overlay" onClick={() => setShowTypeSelector(false)}>
+          <View className="type-selector-content" onClick={(e) => e.stopPropagation()}>
+            <View className="selector-header">
+              <Text className="selector-title">选择单词类型</Text>
+              <Text className="selector-subtitle">已选 {search.type.length} 种</Text>
+            </View>
+            
+            <View className="type-options">
+              <View 
+                className={`type-option ${search.type.includes('v') ? 'selected' : ''}`} 
+                onClick={() => handleTypeChange('v')}
+              >
+                {vcnt || typeMap['v']}
+                {search.type.includes('v') && <Text className="check-icon">✓</Text>}
+              </View>
+              
+              <View 
+                className={`type-option ${search.type.includes('n') ? 'selected' : ''}`} 
+                onClick={() => handleTypeChange('n')}
+              >
+                {ncnt || typeMap['n']}
+                {search.type.includes('n') && <Text className="check-icon">✓</Text>}
+              </View>
+              
+              <View 
+                className={`type-option ${search.type.includes('a') ? 'selected' : ''}`} 
+                onClick={() => handleTypeChange('a')}
+              >
+                {acnt || typeMap['a']}
+                {search.type.includes('a') && <Text className="check-icon">✓</Text>}
+              </View>
+              
+              <View 
+                className={`type-option ${search.type.includes('o') ? 'selected' : ''}`} 
+                onClick={() => handleTypeChange('o')}
+              >
+                {ocnt || typeMap['o']}
+                {search.type.includes('o') && <Text className="check-icon">✓</Text>}
+              </View>
+              
+              <View 
+                className={`type-option ${search.type.includes('d') ? 'selected' : ''}`} 
+                onClick={() => handleTypeChange('d')}
+              >
+                {dcnt || typeMap['d']}
+                {search.type.includes('d') && <Text className="check-icon">✓</Text>}
+              </View>
+            </View>
+            
+            <Button 
+              className="confirm-button" 
+              onClick={() => searchHandle(true)}
+              disabled={search.type.length === 0}
+            >
+              确认选择
+            </Button>
+          </View>
+        </View>
+      )}
     </View>
   )
 }
