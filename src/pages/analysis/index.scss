@@ -1,123 +1,113 @@
-.analysis {
-  display: flex;
-  flex-direction: column;
-  padding: 20px;
-  background-color: #f5f7fa;
+.analyse-page {
   min-height: 100vh;
-  box-sizing: border-box;
+  background-color: #f5f5f5;
+  padding-bottom: 20px;
 
-  .header {
+  // 筛选区域样式
+  .filter-area {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-bottom: 20px;
-    
-    .title {
-      font-size: 20px;
-      font-weight: bold;
-      color: #333;
+    padding: 15px;
+    background-color: #fff;
+    border-bottom: 1px solid #eee;
+    flex-wrap: wrap;
+
+    .filter-item {
+      display: flex;
+      align-items: center;
+      margin-right: 20px;
+      margin-bottom: 10px;
+
+      .filter-label {
+        font-size: 14px;
+        color: #666;
+        margin-right: 8px;
+      }
+
+      .picker {
+        padding: 6px 12px;
+        background-color: #f5f5f5;
+        border-radius: 4px;
+        font-size: 14px;
+        color: #333;
+        min-width: 100px;
+        text-align: center;
+      }
     }
   }
-  
-  .card {
-    background-color: #fff;
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    
-    .card-title {
-      font-size: 18px;
-      font-weight: bold;
-      color: #333;
-      margin-bottom: 16px;
+
+  // 数据概览卡片样式
+  .overview-cards {
+    display: flex;
+    padding: 15px;
+    gap: 10px;
+    flex-wrap: wrap;
+
+    .overview-card {
+      flex: 1;
+      min-width: 120px;
+      background-color: #fff;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      text-align: center;
+
+      .card-title {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 8px;
+        display: block;
+      }
+
+      .card-value {
+        font-size: 20px;
+        font-weight: bold;
+        color: #333;
+      }
+    }
+  }
+
+  // 图表容器样式
+  .charts-container {
+    padding: 0 15px;
+
+    .chart-card {
+      background-color: #fff;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    // 自定义图表样式
+    .custom-chart {
+      width: 100%;
+      height: 300px;
       display: block;
     }
   }
-  
-  .overview {
-    display: flex;
-    justify-content: space-between;
-    
-    .overview-item {
-      display: flex;
+
+  // 响应式调整
+  @media (max-width: 375px) {
+    .filter-area {
       flex-direction: column;
-      align-items: center;
-      flex: 1;
-      
-      .overview-value {
-        font-size: 24px;
-        font-weight: bold;
-        color: #1677ff;
-        margin-bottom: 4px;
-      }
-      
-      .overview-label {
-        font-size: 12px;
-        color: #666;
+
+      .filter-item {
+        width: 100%;
+        margin-right: 0;
       }
     }
-  }
-  
-  .daily-stats {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    height: 120px;
-    
-    .day-item {
-      display: flex;
+
+    .overview-cards {
       flex-direction: column;
-      align-items: center;
-      flex: 1;
-      
-      .day-bar {
-        width: 20px;
-        background-color: #1677ff;
-        border-radius: 10px 10px 0 0;
-        margin-bottom: 8px;
-        opacity: 0.7;
-        
-        &.active {
-          opacity: 1;
-          background-color: #1677ff;
-        }
-      }
-      
-      .day-label {
-        font-size: 12px;
-        color: #666;
+
+      .overview-card {
+        min-width: auto;
       }
     }
-  }
-  
-  .mastery {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    
-    .mastery-item {
-      display: flex;
-      align-items: center;
-      
-      .mastery-progress {
-        height: 8px;
-        background-color: #1677ff;
-        border-radius: 4px;
-        margin-right: 10px;
-      }
-      
-      .mastery-label {
-        font-size: 14px;
-        color: #333;
-        width: 60px;
-      }
-      
-      .mastery-count {
-        font-size: 14px;
-        color: #1677ff;
-        font-weight: bold;
-        margin-left: auto;
+
+    .charts-container {
+      .custom-chart {
+        height: 250px;
       }
     }
   }
