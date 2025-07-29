@@ -1,0 +1,89 @@
+.bar-chart-container {
+    width: 100%;
+    padding: 16rpx 16rpx 44rpx 16rpx;
+    background-color: #fff;
+    border-radius: 12rpx;
+    border: #949494 1px solid;
+    box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.25);
+    box-sizing: border-box;
+  
+  .chart-title {
+    display: block;
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    margin-top: 36px;
+    color: #333;
+  }
+  
+  .bar-chart {
+    display: flex;
+    width: 100%;
+    border-left: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+    position: relative;
+    
+    .y-axis {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100%;
+      padding-right: 8px;
+      
+      .y-tick {
+        font-size: 20px;
+        color: #666;
+        transform: translateY(50%);
+      }
+    }
+    
+    .chart-content {
+      flex: 1;
+      display: flex;
+      align-items: flex-end;
+      height: 100%;
+      position: relative;
+      
+      .no-data {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #999;
+        font-size: 20px;
+      }
+      
+      .bar-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        height: 100%;
+        position: relative;
+        bottom: -36px;
+        
+        .bar-value {
+          position: absolute;
+          bottom: 36px;
+          font-size: 24rpx;
+          color: #fff;
+          padding-bottom: 4rpx;
+        }
+        
+        .bar {
+          border-radius: 8px 8px 0 0;
+          transition: height 0.5s ease;
+        }
+        
+        .bar-label {
+          margin-top: 8px;
+          font-size: 20px;
+          color: #666;
+          text-align: center;
+        }
+      }
+    }
+  }
+}
