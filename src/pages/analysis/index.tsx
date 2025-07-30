@@ -24,7 +24,13 @@ const MASTERY_LEVELS = [
   { label: '濒危', min: 0, max: 0.3, color: '#FFD93D' },
   { label: '一般', min: 0.3, max: 0.7, color: '#6BCB77' },
   { label: '掌握', min: 0.7, max: 1, color: '#4D96FF' },
-  { label: '熟练', min: 1, max: 1, color: '#9B5DE5' }
+  { label: '熟练', min: 1, max: 1, color: '#9B5DE5' },
+];
+
+// 最近7天颜色配置
+const DAILY_COLORS = [
+  '#FF6B6B', '#FFD93D', '#6BCB77', 
+  '#4D96FF', '#9B5DE5', '#FF6BCB', '#6B6BFF'
 ];
 
 export default () => {
@@ -52,16 +58,66 @@ export default () => {
     { title: '近一周', value: 7 },
     { title: '近半月', value: 15 },
     { title: '近一月', value: 30 },
-
   ]);
   const [selectedDateRange, setSelectedDateRange] = useState(0);
+
+  // 最近7天学习数据
+  const [dailyLearningData, setDailyLearningData] = useState<{ 
+    label: string; 
+    value: number;
+    color: string;
+  }[]>([]);
 
   // 初始化数据
   useEffect(() => {
     const storedData: Word[] = JSON.parse(Taro.getStorageSync('word') || '[]');
-
     setAllWords(storedData);
+    
+    // 计算最近7天学习数据
+    calculateDailyLearningData(storedData);
   }, []);
+
+  // 计算最近7天学习数据
+  const calculateDailyLearningData = (words: Word[]) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // 创建最近7天的日期数组
+    const dateLabels = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+    }).reverse();
+    
+    // 初始化每天的学习数量为0
+    const dailyCounts = dateLabels.map(() => 0);
+    
+    // 统计每天学习的单词数
+    words.forEach(word => {
+      const wordDate = new Date(word.time);
+      wordDate.setHours(0, 0, 0, 0);
+      
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - (6 - i));
+        date.setHours(0, 0, 0, 0);
+        
+        if (wordDate.getTime() === date.getTime()) {
+          dailyCounts[i]++;
+          break;
+        }
+      }
+    });
+    
+    // 组合日期、学习数量和颜色
+    const result = dateLabels.map((date, index) => ({
+      label: date,
+      value: dailyCounts[index],
+      color: DAILY_COLORS[index]
+    }));
+    
+    setDailyLearningData(result);
+  };
 
   // 应用筛选条件
   useEffect(() => {
@@ -73,8 +129,7 @@ export default () => {
     
     // 按时间范围筛选
     if (selectedDateRange > 0) {
-      const now = Date.now();
-      const timeThreshold = now - selectedDateRange * 24 * 60 * 60 * 1000;
+      const timeThreshold = Date.now() - selectedDateRange * 24 * 60 * 60 * 1000;
       result = result.filter(word => word.time >= timeThreshold);
     }
     
@@ -140,7 +195,6 @@ export default () => {
             {bookOptions.find(option => option.value === selectedBook)?.title || '全部书本'}
           </View>
         </Picker>
-  
 
         <Picker
           mode="selector"
@@ -152,26 +206,34 @@ export default () => {
             {dateRangeOptions.find(option => option.value === selectedDateRange)?.title || '全部'}
           </View>
         </Picker>
-     
       </View>
       
       {/* 统计摘要 */}
       <View className="stats-summary">
-        <View className="stat-item">
-          <Text className="stat-label">单词总数</Text>
-          <Text className="stat-value">{filteredWords.length}</Text>
-        </View>
-
         <View className="stat-item">
           <Text className="stat-label">已掌握</Text>
           <Text className="stat-value">{masteredWordsCount}</Text>
         </View>
       </View>
       
-      {/* 柱状图 */}
-      <BarChart data={masteryData}  title="单词掌握情况分布" height={200} barWidth="40%"/>
-
+      {/* 柱状图 - 单词掌握情况 */}
+      <BarChart 
+        data={masteryData}  
+        title={`${selectedBook}${selectedDateRange ? '近' + selectedDateRange + '天' : ''}单词掌握情况(${filteredWords.length})`} 
+        height={200} 
+        barWidth="40%"
+      />
       
+      {/* 柱状图 - 最近7天学习情况 (不受筛选控制) */}
+
+      <BarChart 
+        data={dailyLearningData} 
+        title="每日学习单词数量" 
+        height={200} 
+        barWidth="30%"
+        maxValue={Math.max(5, ...dailyLearningData.map(item => item.value))} // 设置最小Y轴范围
+      />
+
     </View>
   );
-}
+}    

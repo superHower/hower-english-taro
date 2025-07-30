@@ -1,6 +1,8 @@
 
 .word-mastery-chart {
   padding: 16px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  min-height: 100vh;
   .filter-controls {
     display: flex;
     justify-content: space-around;
@@ -40,12 +42,12 @@
       text-align: center;
       .stat-label {
         font-size: 20px;
-        color: #666;
+        color: #ffffff;
       }
       .stat-value {
         font-size: 24px;
         font-weight: 500;
-        color: #333;
+        color: #ffffff;
       }
     }
   }

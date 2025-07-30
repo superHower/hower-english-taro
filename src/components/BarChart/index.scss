@@ -1,11 +1,11 @@
 .bar-chart-container {
     width: 100%;
     padding: 16rpx 16rpx 44rpx 16rpx;
-    background-color: #fff;
     border-radius: 12rpx;
     border: #949494 1px solid;
     box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.25);
     box-sizing: border-box;
+    margin-bottom: 24px;
   
   .chart-title {
     display: block;
@@ -13,7 +13,7 @@
     font-size: 24px;
     font-weight: bold;
     margin-top: 36px;
-    color: #333;
+    color: #ffffff;
   }
   
   .bar-chart {
@@ -32,7 +32,7 @@
       
       .y-tick {
         font-size: 20px;
-        color: #666;
+        color: #c4c4c4;
         transform: translateY(50%);
       }
     }
@@ -50,7 +50,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #999;
+        color: #d1d1d1;
         font-size: 20px;
       }
       
@@ -80,7 +80,7 @@
         .bar-label {
           margin-top: 8px;
           font-size: 20px;
-          color: #666;
+          color: #ffffff;
           text-align: center;
         }
       }
