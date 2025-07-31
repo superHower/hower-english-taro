@@ -1,0 +1,71 @@
+.pie-chart-container {
+  width: 100%;
+  padding: 16rpx 16rpx 44rpx 16rpx;
+  border-radius: 12rpx;
+  border: #949494 1px solid;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+  margin-bottom: 24px;
+  
+  .chart-title {
+    display: block;
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    margin-top: 16px;
+    margin-bottom: 16px;
+    color: #ffffff;
+  }
+  
+  .pie-chart {
+    position: relative;
+    margin: 0 auto;
+    
+    .no-data {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #d1d1d1;
+      font-size: 20px;
+    }
+
+    .pie-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+  }
+  
+  .pie-legend {
+    margin-top: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin: 6px 12px;
+      
+      .legend-color {
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
+        margin-right: 8px;
+      }
+      
+      .legend-label {
+        font-size: 16px;
+        color: #ffffff;
+        margin-right: 8px;
+      }
+      
+      .legend-percentage {
+        font-size: 14px;
+        color: #c4c4c4;
+      }
+    }
+  }
+}

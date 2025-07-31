@@ -3,6 +3,7 @@ import { View, Text, Picker } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 
 import BarChart from '../../components/BarChart/index'
+import PieChart from '../../components/PieChart/index';
 import './index.scss'
 
 interface Word {
@@ -20,11 +21,11 @@ interface Word {
 
 // 掌握程度等级配置
 const MASTERY_LEVELS = [
-  { label: '生疏', min: 0, max: 0, color: '#FF6B6B' },
-  { label: '濒危', min: 0, max: 0.3, color: '#FFD93D' },
-  { label: '一般', min: 0.3, max: 0.7, color: '#6BCB77' },
-  { label: '掌握', min: 0.7, max: 1, color: '#4D96FF' },
-  { label: '熟练', min: 1, max: 1, color: '#9B5DE5' },
+  { label: '未学习', min: -1, max: -1, color: '#FF6B6B' }, // cnt=0
+  { label: '生疏', min: 0, max: 0.3, color: '#FFD93D' }, // error/cnt在0-0.3之间
+  { label: '濒危', min: 0.3, max: 0.7, color: '#6BCB77' },
+  { label: '掌握', min: 0.7, max: 0.99, color: '#4D96FF' },
+  { label: '熟练', min: 0.99, max: 1.01, color: '#9B5DE5' }, // 掌握程度≥0.99且cnt≥3
 ];
 
 // 最近7天颜色配置
@@ -40,7 +41,7 @@ export default () => {
   
   // 书本筛选相关状态
   const [bookOptions] = useState([
-    { title: '全部书本', value: 'all' },
+    { title: 'all books', value: 'all' },
     { title: '7A', value: '7A' },
     { title: '7B', value: '7B' },
     { title: '8A', value: '8A' },
@@ -52,12 +53,12 @@ export default () => {
   
   // 日期筛选相关状态
   const [dateRangeOptions] = useState([
-    { title: '全部时间', value: 0 },
-    { title: '昨日', value: 1 },
-    { title: '近三天', value: 3 },
-    { title: '近一周', value: 7 },
-    { title: '近半月', value: 15 },
-    { title: '近一月', value: 30 },
+    { title: 'all times', value: 0 },
+    { title: 'yesterday', value: 1 },
+    { title: 'in the past 3 days', value: 3 },
+    { title: 'in the past week', value: 7 },
+    { title: 'in the past 15 days', value: 15 },
+    { title: 'in the past month', value: 30 },
   ]);
   const [selectedDateRange, setSelectedDateRange] = useState(0);
 
@@ -67,6 +68,13 @@ export default () => {
     value: number;
     color: string;
   }[]>([]);
+
+        const data = [
+    { label: '已掌握', value: 120, color: '#67C23A' },
+    { label: '复习中', value: 80, color: '#409EFF' },
+    { label: '学习中', value: 60, color: '#E6A23C' },
+    { label: '未掌握', value: 40, color: '#F56C6C' },
+  ]
 
   // 初始化数据
   useEffect(() => {
@@ -82,12 +90,16 @@ export default () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    // 创建最近7天的日期数组
+    // 创建最近7天的日期数组（格式：7月21日）
     const dateLabels = Array.from({ length: 7 }, (_, i) => {
       const date = new Date(today);
-      date.setDate(today.getDate() - i);
-      return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
-    }).reverse();
+      date.setDate(today.getDate() - i); // 从今天往前推i天
+      
+      // 直接获取月份和日期，手动拼接成“X月X日”格式
+      const month = date.getMonth() + 1; // 月份从0开始，需+1
+      const day = date.getDate();
+      return `${month}月${day}日`;
+    }).reverse(); // 反转后按时间正序排列（最早→最近）
     
     // 初始化每天的学习数量为0
     const dailyCounts = dateLabels.map(() => 0);
@@ -99,7 +111,7 @@ export default () => {
       
       for (let i = 0; i < 7; i++) {
         const date = new Date(today);
-        date.setDate(today.getDate() - (6 - i));
+        date.setDate(today.getDate() - (6 - i)); // 匹配标签的时间顺序
         date.setHours(0, 0, 0, 0);
         
         if (wordDate.getTime() === date.getTime()) {
@@ -109,7 +121,7 @@ export default () => {
       }
     });
     
-    // 组合日期、学习数量和颜色
+    // 组合结果
     const result = dateLabels.map((date, index) => ({
       label: date,
       value: dailyCounts[index],
@@ -118,7 +130,6 @@ export default () => {
     
     setDailyLearningData(result);
   };
-
   // 应用筛选条件
   useEffect(() => {
     let result = [...allWords];
@@ -147,37 +158,51 @@ export default () => {
     
     // 遍历单词计算掌握程度
     filteredWords.forEach(word => {
-      // 计算掌握程度 (1 - 错误率)
-      const mastery = word.cnt > 0 ? 1 - (word.error / word.cnt) : 0;
+      // 处理从未学习的单词 (cnt=0)
+      if (word.cnt === 0) {
+        levelCounts[0].value++;
+        return;
+      }
       
-      // 找到对应的掌握等级
-      for (let i = 0; i < MASTERY_LEVELS.length; i++) {
+      // 计算掌握程度 (1 - 错误率)
+      const mastery = 1 - (word.error / word.cnt);
+      
+      // 处理其他等级
+      for (let i = 1; i < MASTERY_LEVELS.length; i++) {
         const level = MASTERY_LEVELS[i];
         
-        // 特殊处理"生疏"等级 (cnt=0)
-        if (i === 0 && word.cnt === 0) {
-          levelCounts[i].value++;
-          break;
+        // 熟练等级需要额外条件：cnt≥3
+        if (i === MASTERY_LEVELS.length - 1) {
+          if (mastery >= level.min && word.cnt >= 3) {
+            levelCounts[i].value++;
+            return;
+          }
         }
-        
-        // 处理其他等级
-        if (
-          (i === MASTERY_LEVELS.length - 1 && mastery >= level.min) || // 熟练等级
-          (mastery >= level.min && mastery < level.max) // 其他等级
-        ) {
+        // 其他等级
+        else if (mastery >= level.min && mastery < level.max) {
           levelCounts[i].value++;
-          break;
+          return;
         }
       }
+      
+      // 处理未匹配到任何等级的情况（理论上不会发生）
+      levelCounts[1].value++; // 默认为生疏
     });
     
     return levelCounts;
   }, [filteredWords]);
-
-  // 计算掌握单词数量
+  
+  // 计算掌握单词数量（掌握+熟练）
   const masteredWordsCount = useMemo(() => {
     return masteryData
       .filter(item => ['掌握', '熟练'].includes(item.label))
+      .reduce((sum, item) => sum + item.value, 0);
+  }, [masteryData]);
+  
+  // 计算易遗忘的单词数量（未学习+生疏）
+  const forgotWordsCount = useMemo(() => {
+    return masteryData
+      .filter(item => ['未学习', '生疏'].includes(item.label))
       .reduce((sum, item) => sum + item.value, 0);
   }, [masteryData]);
 
@@ -192,7 +217,7 @@ export default () => {
           onChange={(e) => setSelectedBook(bookOptions[e.detail.value].value)}
         >
           <View className="picker">
-            {bookOptions.find(option => option.value === selectedBook)?.title || '全部书本'}
+            {bookOptions.find(option => option.value === selectedBook)?.title || 'all books'}
           </View>
         </Picker>
 
@@ -203,7 +228,7 @@ export default () => {
           onChange={(e) => setSelectedDateRange(dateRangeOptions[e.detail.value].value)}
         >
           <View className="picker">
-            {dateRangeOptions.find(option => option.value === selectedDateRange)?.title || '全部'}
+            {dateRangeOptions.find(option => option.value === selectedDateRange)?.title || 'all times'}
           </View>
         </Picker>
       </View>
@@ -211,15 +236,24 @@ export default () => {
       {/* 统计摘要 */}
       <View className="stats-summary">
         <View className="stat-item">
-          <Text className="stat-label">已掌握</Text>
+          <Text className="stat-label">筛选后，已掌握的单词，放一行滚动展示</Text>
           <Text className="stat-value">{masteredWordsCount}</Text>
         </View>
+        <View className="stat-item">
+          <Text className="stat-label">筛选后，易遗忘的单词，放一行滚动展示</Text>
+          <Text className="stat-value">{masteredWordsCount}</Text>
+        </View>
+        本书总战绩
+        全部单词
+        
+        
+
       </View>
       
       {/* 柱状图 - 单词掌握情况 */}
       <BarChart 
         data={masteryData}  
-        title={`${selectedBook}${selectedDateRange ? '近' + selectedDateRange + '天' : ''}单词掌握情况(${filteredWords.length})`} 
+        title={`${selectedBook}单词掌握情况${dateRangeOptions.find(option => option.value === selectedDateRange)?.title || 'all times'}(${filteredWords.length})`} 
         height={200} 
         barWidth="40%"
       />
@@ -233,6 +267,42 @@ export default () => {
         barWidth="30%"
         maxValue={Math.max(5, ...dailyLearningData.map(item => item.value))} // 设置最小Y轴范围
       />
+
+
+
+
+
+      {/* 基本饼图 */}
+      <PieChart 
+        data={data}
+        title="单词掌握情况"
+        size={300}
+      />
+      
+      {/* 不显示图例的饼图 */}
+      <PieChart 
+        data={data}
+        title="不带图例的饼图"
+        size={250}
+        showLegend={false}
+      />
+      
+      {/* 不显示百分比的饼图 */}
+      <PieChart 
+        data={data}
+        title="不带百分比的饼图"
+        size={250}
+        showPercentage={false}
+      />
+      
+      {/* 自定义环形宽度的饼图 */}
+      <PieChart 
+        data={data}
+        title="窄环形饼图"
+        size={250}
+        strokeWidth={30}
+      />
+  
 
     </View>
   );
