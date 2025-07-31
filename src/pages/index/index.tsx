@@ -30,9 +30,9 @@ export default function Index() {
 
   // 学习配置
   const [config, setConfig] = useState<any>({
-    newWordCount: 10,        // 新单词数量
-    errorWordCount: 30,      // 错误单词数量  
-    reviewWordCount: 10,     // 复习单词数量
+    newWordCount: 15,        // 新单词数量
+    errorWordCount: 27,      // 错误单词数量  
+    reviewWordCount: 8,     // 复习单词数量
     timePerWord: 10,         // 每个单词的时间(秒)
   })
 
@@ -163,13 +163,13 @@ export default function Index() {
   const setPreset = (mode) => {
     switch(mode) {
       case 'light':
-        setConfig({ newWordCount: 5, errorWordCount: 15, reviewWordCount: 5, timePerWord: 15 })
+        setConfig({ newWordCount: 10, errorWordCount: 20, reviewWordCount: 5, timePerWord: 9 })
         break
       case 'normal':
-        setConfig({ newWordCount: 10, errorWordCount: 30, reviewWordCount: 10, timePerWord: 10 })
+        setConfig({ newWordCount: 15, errorWordCount: 27, reviewWordCount: 8, timePerWord: 10 })
         break
       case 'intensive':
-        setConfig({ newWordCount: 20, errorWordCount: 50, reviewWordCount: 20, timePerWord: 8 })
+        setConfig({ newWordCount: 20, errorWordCount: 35, reviewWordCount: 20, timePerWord: 11 })
         break
       default:
         break

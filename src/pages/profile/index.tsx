@@ -10,23 +10,6 @@ export default function Profile () {
     console.log('Profile page loaded.')
   })
 
-  const clearCache = () => {
-    try {
-      Taro.removeStorageSync('word')
-      Taro.showToast({
-        title: '缓存已清除',
-        icon: 'success',
-        duration: 2000
-      })
-    } catch (error) {
-      console.error('Clear storage error:', error)
-      Taro.showToast({
-        title: '清除缓存失败',
-        icon: 'error',
-        duration: 2000
-      })
-    }
-  }
     // 复制缓存内容功能
   const copyCache = async () => {
     try {
@@ -101,25 +84,13 @@ export default function Profile () {
       </View>
       
       <View className='menu-list'>
-        <View className='menu-item' onClick={clearCache}>
-          <Text className='menu-title'>清除本地缓存</Text>
-          <Text className='menu-arrow'>›</Text>
-        </View>
         <View className='menu-item' onClick={copyCache}>
           <Text className='menu-title'>复制缓存内容</Text>
           <Text className='menu-arrow'>›</Text>
         </View>
 
         <View className='menu-item'>
-          <Text className='menu-title'>设置</Text>
-          <Text className='menu-arrow'>›</Text>
-        </View>
-        <View className='menu-item'>
-          <Text className='menu-title'>帮助与反馈</Text>
-          <Text className='menu-arrow'>›</Text>
-        </View>
-        <View className='menu-item'>
-          <Text className='menu-title'>关于我们</Text>
+          <Text className='menu-title'>设置学习模式</Text>
           <Text className='menu-arrow'>›</Text>
         </View>
       </View>

@@ -38,6 +38,7 @@ export default () => {
   // 状态管理
   const [allWords, setAllWords] = useState<Word[]>([]);
   const [filteredWords, setFilteredWords] = useState<Word[]>([]);
+  const [loading, setLoading] = useState(true); // 添加加载状态
   
   // 书本筛选相关状态
   const [bookOptions] = useState([
@@ -69,14 +70,25 @@ export default () => {
     color: string;
   }[]>([]);
 
-  // 初始化数据
-  useEffect(() => {
-    const storedData: Word[] = JSON.parse(Taro.getStorageSync('word') || '[]');
-    setAllWords(storedData);
-    
-    // 计算最近7天学习数据
-    calculateDailyLearningData(storedData);
-  }, []);
+  // 加载数据函数
+  const loadData = () => {
+    setLoading(true);
+    try {
+      const storedData: Word[] = JSON.parse(Taro.getStorageSync('word') || '[]');
+      setAllWords(storedData);
+      calculateDailyLearningData(storedData);
+    } catch (error) {
+      console.error('加载数据失败:', error);
+      Taro.showToast({ title: '数据加载失败', icon: 'none' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 每次进入页面时加载数据
+  Taro.useDidShow(() => {
+    loadData();
+  });
 
   // 计算最近7天学习数据
   const calculateDailyLearningData = (words: Word[]) => {
@@ -99,6 +111,9 @@ export default () => {
     
     // 统计每天学习的单词数
     words.forEach(word => {
+      // 跳过未学习的单词（time为0或不存在）
+      if (!word.time) return;
+      
       const wordDate = new Date(word.time);
       wordDate.setHours(0, 0, 0, 0);
       
@@ -123,8 +138,11 @@ export default () => {
     
     setDailyLearningData(result);
   };
+
   // 应用筛选条件
   useEffect(() => {
+    if (allWords.length === 0) return;
+    
     let result = [...allWords];
     // 按书本筛选
     if (selectedBook !== 'all') {
@@ -134,7 +152,7 @@ export default () => {
     // 按时间范围筛选
     if (selectedDateRange > 0) {
       const timeThreshold = Date.now() - selectedDateRange * 24 * 60 * 60 * 1000;
-      result = result.filter(word => word.time >= timeThreshold);
+      result = result.filter(word => word.time && word.time >= timeThreshold);
     }
     
     setFilteredWords(result);
@@ -199,6 +217,15 @@ export default () => {
       .reduce((sum, item) => sum + item.value, 0);
   }, [masteryData]);
 
+  // 渲染加载状态
+  if (loading) {
+    return (
+      <View className="word-mastery-chart loading">
+        <Text>数据加载中...</Text>
+      </View>
+    );
+  }
+
   return (
     <View className="word-mastery-chart">
       {/* 筛选控制区 */}
@@ -255,8 +282,6 @@ export default () => {
         title={`${selectedBook}单词掌握情况 ${dateRangeOptions.find(option => option.value === selectedDateRange)?.title || 'all times'}(${filteredWords.length})`} 
         size={200}
       />
-
-
     </View>
   );
-}    
+}

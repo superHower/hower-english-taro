@@ -25,7 +25,7 @@
         align-items: center;
         justify-content: center;
         color: #fff;
-        font-size: 24px;
+        font-size: 34px;
         font-weight: bold;
       }
     }
@@ -34,7 +34,7 @@
       flex: 1;
       
       .username {
-        font-size: 18px;
+        font-size: 28px;
         font-weight: bold;
         color: #333;
         margin-bottom: 4px;
@@ -42,7 +42,7 @@
       }
       
       .user-level {
-        font-size: 14px;
+        font-size: 24px;
         color: #666;
         display: block;
       }
@@ -52,7 +52,7 @@
       padding: 0 15px;
       height: 30px;
       line-height: 30px;
-      font-size: 14px;
+      font-size: 24px;
       background-color: #f0f0f0;
       color: #333;
       border-radius: 15px;
@@ -73,14 +73,14 @@
       flex: 1;
       
       .stat-value {
-        font-size: 18px;
+        font-size: 28px;
         font-weight: bold;
         color: #1677ff;
         margin-bottom: 4px;
       }
       
       .stat-label {
-        font-size: 12px;
+        font-size: 22px;
         color: #666;
       }
     }
@@ -102,12 +102,12 @@
       }
       
       .menu-title {
-        font-size: 16px;
+        font-size: 26px;
         color: #333;
       }
       
       .menu-arrow {
-        font-size: 18px;
+        font-size: 28px;
         color: #ccc;
       }
     }
