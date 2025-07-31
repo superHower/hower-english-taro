@@ -122,7 +122,7 @@ export default function PieChart ({
         
         // 绘制中心文本
         ctx.setFillStyle('#ffffff');
-        ctx.setFontSize(24);
+        ctx.setFontSize(20);
         ctx.setTextAlign('center');
         ctx.setTextBaseline('middle');
         ctx.fillText(totalValue.toString(), centerX, centerY);

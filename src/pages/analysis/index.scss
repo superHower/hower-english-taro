@@ -47,31 +47,54 @@
   .filter-controls {
     display: flex;
     justify-content: space-around;
-    margin-bottom: 20px;
-
+    padding: 16px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.6);
 
     .picker {
       flex: 1;
-      padding: 10px 15px;
-      border-radius: 8px;
-      background-color: #f7f8fa;
-      border: 1px solid #e5e6eb;
-      color: #333;
+      padding: 12px 20px;
+      border-radius: 12px;
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #e0e0e0;
       font-size: 24px;
       position: relative;
-      &::after {
-        content: '';
-        position: absolute;
-        right: 15px;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 0;
-        height: 0;
-        border-left: 5px solid transparent;
-        border-right: 5px solid transparent;
-        border-top: 6px solid #888;
-      }
+      cursor: pointer;
+      transition: all 0.3s ease;
+      appearance: none;
+      outline: none;
     }
+  
+    .picker:hover {
+      background-color: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+  
+    .picker:focus {
+      border-color: #8b5cf6;
+      box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+    }
+  
+    .picker::after {
+      content: '';
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 6px solid #b0b0b0;
+      pointer-events: none;
+      transition: border-color 0.3s ease;
+    }
+  
+    .picker:hover::after {
+      border-top-color: #e0e0e0;
+    }
+
     
   }
   .stats-summary {
@@ -80,32 +103,104 @@
     justify-content: space-around;
     align-items: center;
     margin: 16px 0;
-    padding: 12px;
-    background-color: rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
-    
+
+    backdrop-filter: blur(8px);
+
+
     .stat-item {
       text-align: center;
       flex: 1;
-      min-width: 80px;
-      margin: 8px 4px;
-      padding: 8px 4px;
-      
-      .stat-label {
-        font-size: 16px;
-        color: #e0e0e0;
-        display: block;
-        margin-bottom: 6px;
-        white-space: nowrap;
-      }
-      
-      .stat-value {
-        font-size: 24px;
-        font-weight: 500;
-        color: #ffffff;
-        display: block;
-      }
+      min-width: 100px;
+      margin: 12px 8px;
+      padding: 16px 12px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+
+
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .stat-item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6);
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
+    }
+    
+    .stat-item:hover {
+      transform: translateY(-5px);
+      background: rgba(255, 255, 255, 0.05);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+    }
+    
+    .stat-item:hover::before {
+      transform: scaleX(1);
+    }
+    
+    .stat-label {
+      font-size: 24px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #b0b0b0;
+      display: block;
+      margin-bottom: 8px;
+      white-space: nowrap;
+      transition: color 0.3s ease;
+    }
+    
+    .stat-item:hover .stat-label {
+      color: #d1d5db;
+    }
+    
+    .stat-value {
+      font-size: 30px;
+      font-weight: 600;
+      color: #ffffff;
+      display: block;
+      position: relative;
+      letter-spacing: -0.5px;
+    }
+    
+    .stat-value::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6);
+      transition: width 0.3s ease;
+    }
+    
+    .stat-item:hover .stat-value::after {
+      width: 60%;
+    }
+    
+
+    .stat-item:nth-child(1) .stat-value {
+      color: #60a5fa;
+    }
+    
+    .stat-item:nth-child(2) .stat-value {
+      color: #34d399;
+    }
+    
+    .stat-item:nth-child(3) .stat-value {
+      color: #fbbf24;
+    }
+    
+    .stat-item:nth-child(4) .stat-value {
+      color: #ec4899;
     }
   }
-
 }    

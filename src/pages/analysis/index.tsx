@@ -42,12 +42,12 @@ export default () => {
   // 书本筛选相关状态
   const [bookOptions] = useState([
     { title: 'all books', value: 'all' },
-    { title: '7A', value: '7A' },
-    { title: '7B', value: '7B' },
-    { title: '8A', value: '8A' },
-    { title: '8B', value: '8B' },
-    { title: '9A', value: '9A' },
-    { title: '9B', value: '9B' },
+    { title: 'seven A', value: '7A' },
+    { title: 'seven B', value: '7B' },
+    { title: 'eight A', value: '8A' },
+    { title: 'eight B', value: '8B' },
+    { title: 'nine A', value: '9A' },
+    { title: 'nine B', value: '9B' },
   ]);
   const [selectedBook, setSelectedBook] = useState('7A');
   
@@ -228,21 +228,16 @@ export default () => {
       
       {/* 统计摘要 */}
       <View className="stats-summary">
-  
-        本书总战绩
-        全部单词
-        <Text className="stat-value">{filteredWords.length}</Text>
-        已掌握单词
-        <Text className="stat-value">{masteredWordsCount}</Text>
-        易遗忘单词
-        <Text className="stat-value">{forgotWordsCount}</Text>
-        
-      <View className="stat-item">
-          <Text className="stat-label">筛选后，已掌握的单词，放一行滚动展示</Text>
+       <View className="stat-item">
+          <Text className="stat-label">全部</Text>
+          <Text className="stat-value">{filteredWords.length}</Text>
+        </View>
+        <View className="stat-item">
+          <Text className="stat-label">已掌握</Text>
           <Text className="stat-value">{masteredWordsCount}</Text>
         </View>
         <View className="stat-item">
-          <Text className="stat-label">筛选后，易遗忘的单词，放一行滚动展示</Text>
+          <Text className="stat-label">易遗忘</Text>
           <Text className="stat-value">{forgotWordsCount}</Text>
         </View>
       </View>
