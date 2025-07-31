@@ -13,7 +13,7 @@
     font-size: 24px;
     font-weight: bold;
     margin-top: 16px;
-    margin-bottom: 16px;
+    margin-bottom: 24px;
     color: #ffffff;
   }
   
@@ -50,20 +50,20 @@
       margin: 6px 12px;
       
       .legend-color {
-        width: 16px;
-        height: 16px;
+        width: 20px;
+        height: 20px;
         border-radius: 4px;
         margin-right: 8px;
       }
       
       .legend-label {
-        font-size: 16px;
+        font-size: 20px;
         color: #ffffff;
         margin-right: 8px;
       }
       
       .legend-percentage {
-        font-size: 14px;
+        font-size: 22px;
         color: #c4c4c4;
       }
     }

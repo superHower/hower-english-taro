@@ -166,7 +166,7 @@ export default function PieChart ({
               <View className="legend-color" style={{ backgroundColor: segment.color }}></View>
               <Text className="legend-label">{segment.label}</Text>
               {showPercentage && (
-                <Text className="legend-percentage">{segment.percentage.toFixed(1)}%</Text>
+                <Text className="legend-percentage">{segment.value}({segment.percentage.toFixed(1)}%)</Text>
               )}
             </View>
           ))}

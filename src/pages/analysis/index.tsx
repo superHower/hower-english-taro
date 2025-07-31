@@ -69,13 +69,6 @@ export default () => {
     color: string;
   }[]>([]);
 
-        const data = [
-    { label: '已掌握', value: 120, color: '#67C23A' },
-    { label: '复习中', value: 80, color: '#409EFF' },
-    { label: '学习中', value: 60, color: '#E6A23C' },
-    { label: '未掌握', value: 40, color: '#F56C6C' },
-  ]
-
   // 初始化数据
   useEffect(() => {
     const storedData: Word[] = JSON.parse(Taro.getStorageSync('word') || '[]');
@@ -235,31 +228,25 @@ export default () => {
       
       {/* 统计摘要 */}
       <View className="stats-summary">
-        <View className="stat-item">
+  
+        本书总战绩
+        全部单词
+        <Text className="stat-value">{filteredWords.length}</Text>
+        已掌握单词
+        <Text className="stat-value">{masteredWordsCount}</Text>
+        易遗忘单词
+        <Text className="stat-value">{forgotWordsCount}</Text>
+        
+      <View className="stat-item">
           <Text className="stat-label">筛选后，已掌握的单词，放一行滚动展示</Text>
           <Text className="stat-value">{masteredWordsCount}</Text>
         </View>
         <View className="stat-item">
           <Text className="stat-label">筛选后，易遗忘的单词，放一行滚动展示</Text>
-          <Text className="stat-value">{masteredWordsCount}</Text>
+          <Text className="stat-value">{forgotWordsCount}</Text>
         </View>
-        本书总战绩
-        全部单词
-        
-        
-
       </View>
       
-      {/* 柱状图 - 单词掌握情况 */}
-      <BarChart 
-        data={masteryData}  
-        title={`${selectedBook}单词掌握情况${dateRangeOptions.find(option => option.value === selectedDateRange)?.title || 'all times'}(${filteredWords.length})`} 
-        height={200} 
-        barWidth="40%"
-      />
-      
-      {/* 柱状图 - 最近7天学习情况 (不受筛选控制) */}
-
       <BarChart 
         data={dailyLearningData} 
         title="每日学习单词数量" 
@@ -268,41 +255,12 @@ export default () => {
         maxValue={Math.max(5, ...dailyLearningData.map(item => item.value))} // 设置最小Y轴范围
       />
 
-
-
-
-
-      {/* 基本饼图 */}
       <PieChart 
-        data={data}
-        title="单词掌握情况"
-        size={300}
+        data={masteryData}  
+        title={`${selectedBook}单词掌握情况 ${dateRangeOptions.find(option => option.value === selectedDateRange)?.title || 'all times'}(${filteredWords.length})`} 
+        size={200}
       />
-      
-      {/* 不显示图例的饼图 */}
-      <PieChart 
-        data={data}
-        title="不带图例的饼图"
-        size={250}
-        showLegend={false}
-      />
-      
-      {/* 不显示百分比的饼图 */}
-      <PieChart 
-        data={data}
-        title="不带百分比的饼图"
-        size={250}
-        showPercentage={false}
-      />
-      
-      {/* 自定义环形宽度的饼图 */}
-      <PieChart 
-        data={data}
-        title="窄环形饼图"
-        size={250}
-        strokeWidth={30}
-      />
-  
+
 
     </View>
   );
